@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "解析 CJJ 181 PDF",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/docmind_parse.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "args": [
+        "docs/CJJ 181-2012 城镇排水管道检测与评估技术规程.pdf",
+        "--output-dir",
+        "data/docmind/cjj-181-2012"
+      ]
+    }
+  ]
+}

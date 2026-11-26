@@ -1,0 +1,341 @@
+{
+  "id": "docmind-20261126-7c399298623641f7b8e487e5258e5aae",
+  "source": "docs/CJJ 181-2012 城镇排水管道检测与评估技术规程.pdf",
+  "status_response": {
+    "Data": {
+      "ImageCount": 0,
+      "NumberOfSuccessfulParsing": 611,
+      "OutputFormatResult": [
+        {
+          "OutputFileUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/docmind-20261126-7c399298623641f7b8e487e5258e5aae.md?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=1DAOMpPMA1kiEkDpqufIdayABOo%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+          "OutputType": "markdown",
+          "Pages": []
+        },
+        {
+          "OutputType": "pageImage",
+          "Pages": [
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/0.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=FLAYIdG8n%2FvA%2F1hhvM5oklBZ04k%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 0
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/1.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=ih3nOS9gILz945y2HpJWi8QcFFc%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 1
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/2.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=qLsp90%2FXfn19TknN2biiasGg6Ys%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 2
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/3.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=6z8xqQwc5%2FY9%2BLBpRhqBJQy%2Bakg%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 3
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/4.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=sjcdim5hAR5tWgv3ZnySv%2BS9V%2FQ%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 4
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/5.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=GKH7ZYCFC8LAaz48lpBlZ5KsCE8%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 5
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/6.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=LWBDc9MrARj7Ga0vDtF0DiEk2YY%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 6
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/7.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=JP%2FtgSTja4wHbZnAXuEFMuQFjys%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 7
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/8.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=AeSPyZjxEBXBctJtkuxyVrMTh0g%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 8
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/9.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=n2KNYKNyNB33DVi363pd05GZ8ZQ%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 9
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/10.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=WGYqnfCczHviqixTLIwjamW2%2Fdo%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 10
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/11.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=5Fbuc9Pv%2BdKe%2FWFDr%2Fg%2Bp%2FDvl90%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 11
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/12.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=OUjosx9h4kA3Rp%2F59zjL8e2usXI%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 12
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/13.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=kPPdLd5rsKiIqpt9hGvPc0rE9H8%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 13
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/14.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=TPUtPp3IUft0WjSyX3HU5FVu8i0%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 14
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/15.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=Tf5IcPfvh8I33KImPfTtUnYod%2Fs%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 15
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/16.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=uPkzGT3u3a7baNzqosoX86NDITQ%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 16
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/17.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=dNiIl6AQzxliNYIl8ykRgJZUj2Y%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 17
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/18.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=tDzmvOmra8umXetO92dF6g%2B1Hc8%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 18
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/19.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=wrGDWkCk14KSr8KqRK2jlLsYt2g%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 19
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/20.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=szsSPI%2BHjQ%2F9pXtKGa5Sz4NMgoM%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 20
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/21.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=1MVJBIzB9QETbfvJTLt5NeTvNtc%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 21
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/22.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=5FFeKKzXi%2F6ajbeQq2KzjqX%2BfDY%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 22
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/23.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=KOTS6SqbFHqLBR0%2BAqV7qfoSIkc%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 23
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/24.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=QJbmeAUZQWzSognCgNM7Na3R%2B6g%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 24
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/25.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=530ZkcJNh9uH33yoUh4Fi%2BQeAJs%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 25
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/26.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=Wltqi4hac6a1gx20cMnphJeIPck%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 26
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/27.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=tRmQ8bVAFzNQebuf%2Fik3ETS0Edo%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 27
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/28.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=51Y2xoTo05a5yrbXOR28WmZKt4c%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 28
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/29.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=kDbBLBLl2ZsJEHZzee3tZgB%2B8T4%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 29
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/30.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=HsSb%2FNiQps6K0fWF4BdJLRJqEkw%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 30
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/31.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=wBs13J%2FvMGeAW53HnrNb7o9H63s%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 31
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/32.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=MmSpjxbpGE9f%2Bc8azT76h5CIjmQ%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 32
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/33.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=umpmhglVUNWMsU6fxXqcQJjM1IE%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 33
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/34.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=S9%2FZ6np6gqEBsg4uq9RtMSsqtNw%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 34
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/35.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=iO4JL5fCTv6Cc%2BA2dYrwckudVi4%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 35
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/36.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=IwhFsgMWSC59dt0Rz2geefep0xc%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 36
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/37.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=Q3cyVZq6tK6VEQWQA4vfOPKRFn0%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 37
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/38.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=lTKEJkNiOUo%2FiyrVYBPi1bsnB8g%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 38
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/39.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=b15YyUK4EMtiwST13ARngCabC7c%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 39
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/40.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=vaxoGlVw31NyLvphDBHZMOAn7Ac%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 40
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/41.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=%2F1x%2F9eGDtJra%2BVTo8H96QLV%2BXeQ%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 41
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/42.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=9IKOOg95IpNkIPo3xOUgA1orA3A%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 42
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/43.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=SFHaWkHR7NUxBuFMXEZdR9kBGIk%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 43
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/44.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=ZIudExDbv5ng8rzfiFjc9vK5sDw%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 44
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/45.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=oAVpsA%2Fs8kIc8Z7QawyP9sQMZ08%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 45
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/46.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=9d%2FlyKu15jkbWapCmB%2Bp1IKVzlU%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 46
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/47.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=mO%2FeGBYUZS7ikDPY85UC8ot6zL4%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 47
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/48.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=9I4ShejRMIzxOEJITk7yLxO57J8%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 48
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/49.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=fv5TpQI2ROwbGvzgd9ft8X5sliw%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 49
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/50.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=QwVjqOWFA3yYxoqfK4i9gciF%2BVg%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 50
+            },
+            {
+              "ImageHeight": 1920,
+              "ImageUrl": "http://docmind-api-cn-hangzhou.oss-cn-hangzhou.aliyuncs.com/1126064908374316/publicDocStreamStructure/docmind-20261126-7c399298623641f7b8e487e5258e5aae/51.png?Expires=1795735350&OSSAccessKeyId=STS.NXgaN8qrt78dMQWVWCUrkFEad&Signature=%2F5HrRoQNLKXh4sMxvnCxfOAbLMM%3D&security-token=CAISzwJ1q6Ft5B2yfSjIr5vSKvSMnK1VgPqPT3fmslcWWf1HqYDKhjz2IHhMdXZtA%2BgXsvs0mG5X5%2F4Zlrp6SJtIXleCZtF94oxN9h2gb4fb4yRNXRLN1M%2FLI3OaLjKm9u2wCryLYbGwU%2FOpbE%2B%2B5U0X6LDmdDKkckW4OJmS8%2FBOZcgWWQ%2FKBlgvRq0hRG1YpdQdKGHaONu0LxfumRCwNkdzvRdmgm4NgsbWgO%2Fks0CP0AahlLBL996veMb%2FNfMBZskvD42Hu8VtbbfE3SJq7BxHybx7lqQs%2B02c5onMXAQLu0TabLGIrII%2BdFRjHKk2A%2BtIrePknOFzuuHJ0pztzAbN1iKnr%2BoRLmrJ4LwneIvBXr5RHd5wO0RU0X%2BlTdBzP1eRhd7PqMGu7%2BBgcxleQHUHARKhIaT84wupKVzoEKPOvc97r9wbhjuH87J8wJTpH93xuRqAAYfAzYdl5aOEZ41QoXO5Dh%2FM6oa8xTYg3SeG7Rj3u14uZCSvYd%2BYAGf5%2BxrpFqY1wE%2FD8o27Y1hot86wgEvlShimNaeCLa1LFrc0gVb37H5L4a8S0bzyEi8%2FNho45sIdrjSEVJreF93YtYO4zyD0YxdIC4Rh72J0cWrT3Nz1cdUtIAA%3D",
+              "ImageWidth": 1325,
+              "PageIdCurDoc": 51
+            }
+          ]
+        }
+      ],
+      "PageCountEstimate": 52,
+      "ParagraphCount": 578,
+      "Processing": 100.0,
+      "Status": "success",
+      "TableCount": 33,
+      "Tokens": 18398
+    },
+    "RequestId": "01A21797-BD9F-5A7D-848D-5BDB4DCC295A"
+  }
+}
