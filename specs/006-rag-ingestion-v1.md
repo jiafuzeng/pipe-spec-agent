@@ -44,7 +44,7 @@ V1 让用户能从 Web 导入 CJJ 181—2012 原文或现有 DocMind 清洗产�
 |---|---|---|
 | PDF | 无 | 调用 DocMind；保存原 PDF、DocMind JSON 和 Markdown 输出 |
 | PDF | `document.json`（可附 `document.md`） | 复用 JSON 的 `Data.layouts`；不重复解析；记录附件来源 |
-| Markdown | 无 | 直接作为 LlamaIndex Document；按 Markdown 标题及段落解析；页码未知时为 null |
+| Markdown | 无 | 直接作为 LlamaIndex Document。若全文能按顺序对齐到已有 DocMind `document.json` 的 `Data.layouts`，则按原文 PDF 页切开，每块只含该页正文，并保留该页上对应 layout 的 `uniqueId`、`index`、`type`。对不上时页码为 null，不伪造 |
 | PDF + Markdown/JSON | 文件名由用户在表单明确关联 | 原 PDF 是来源权威文件；清洗附件用于切片；不按文件名自动猜配 |
 
 V1 上传限制由服务端配置统一返回给前端；格式、文件大小、PDF 页数不满足 DocMind 限制时，在解析前拒绝并展示具体原因。服务端不得信任浏览器传来的 MIME 类型，需同时检查扩展名、文件签名和大小。
@@ -70,16 +70,24 @@ data/knowledge/
 
 ## 4. 切片策略
 
-切片参数以 tokens 为单位，UI 明确标注单位。V1 提供两种策略：
+切片参数以 tokens 为单位，UI 明确标注单位。可选策略限于 LlamaIndex `llama_index.core.node_parser` 中能直接切分规程正文的解析器，由后端 allowlist 映射，不接受前端传入的类名。
 
-| `strategy` | 行为 | 适用场景 |
+| `strategy` | LlamaIndex 解析器 | 行为 |
 |---|---|---|
-| `structure`（默认） | 读取 DocMind layout 或 Markdown 标题结构；继承最近的章节标题上下文；按段落/条款/表格/公式边界建立 LlamaIndex Documents；再以 `SentenceSplitter` 将过长内容切到目标 chunk size。短表格/公式保持为一个 chunk。 | 规程、条款、表格，优先保留页码与结构 |
-| `sentence` | 对文档文本直接使用 LlamaIndex `SentenceSplitter(chunk_size, chunk_overlap)` 按句子边界切片。每个节点继承来源文档元数据；DocMind JSON 输入时还继承对应 layout 页码和类型。 | 对照实验或结构信息较弱的 Markdown |
+| `structure`（默认） | 版面切分后接 `SentenceSplitter` | 读取 DocMind layout 或 Markdown 标题，保留页码与条款，再按句子切到目标长度 |
+| `sentence` | `SentenceSplitter` | 按句子边界聚合到 `chunk_size`，相邻块重叠 `chunk_overlap` |
+| `token` | `TokenTextSplitter` | 按 token 切分，使用同样的长度和重叠 |
+| `markdown` | `MarkdownNodeParser`，过长章节再接 `SentenceSplitter` | 按 Markdown 标题切段，并保留标题路径 |
+| `sentence_window` | `SentenceWindowNodeParser` | 每句一块，元数据中保留前后各 3 句 |
+| `hierarchical` | `HierarchicalNodeParser` | 以 `chunk_size` 的 4 倍、2 倍和 1 倍生成父块与子块 |
+| `semantic` | `SemanticSplitterNodeParser` | 用所选 embedding 比较相邻句，语义跳变处断开。预览会调用向量模型 |
+| `semantic_merge` | `SemanticDoubleMergingSplitterNodeParser` | 用所选 embedding 做双阶段语义合并，不使用英文 Spacy 模型 |
+
+不提供 `CodeSplitter`、`JSONNodeParser`、`HTMLNodeParser`、`MarkdownElementNodeParser`、`UnstructuredElementNodeParser`、`LlamaParseJsonNodeParser`。前三类的输入不是规程正文，后三类还要依赖 LLM 摘要或外部解析服务。
 
 V1 默认 `chunk_size=512`、`chunk_overlap=64`；允许用户选择 256/512/768/1024，overlap 选择 0/32/64/128，且必须小于 chunk size 的一半。两个参数都绑定进索引版本。实际 tokenizer 使用模型默认 tokenizer；如果所选模型 integration 不提供 tokenizer，统一使用 LlamaIndex 默认 tokenizer，并在预览页说明这是估算长度。
 
-不能把全文按字符硬切后丢失来源定位。对跨多个 layout 的章节，chunk 可带多个来源 layout ID 的逗号分隔字符串；PDF 页码使用 1 起始 `page_pdf`，同时原样保存 DocMind 的 0 起始 `docmind_page_num`。印刷页码无法从解析结果可靠确认时为 null，不做推算。
+不能把全文按字符硬切后丢失来源定位。同一 PDF 页上跨多个 layout 的切片，用来源 layout ID 的逗号分隔字符串记录这些 layout；不得把两页的正文合成一块。PDF 页码使用 1 起始 `page_pdf`，同时原样保存 DocMind 的 0 起始 `docmind_page_num`。印刷页码无法从解析结果可靠确认时为 null，不做推算。
 
 ## 5. Embedding 模型配置与选择
 
@@ -179,14 +187,14 @@ profile 字段：`profile_id`、`provider`、`model_name`、`model_version`、`d
 
 ### `DELETE /api/v1/knowledge/documents/{source_doc_id}`
 
-执行逻辑删除，从活动检索集合移除节点并保留删除审计记录。
+删除指定文件的全部向量。`source_doc_id` 是该文件的 SHA-256。该文件的每个索引版本都标为 `deleted`，对应的 Chroma collection 被删除；其他文件的向量保持不变。删除写入审计记录。导入页列出尚未删除的文件，并提供这一操作。
 
 ## 9. Web 页面要求
 
-- **导入页**：拖放/文件选择，展示原文和清洗附件各自文件名、大小、格式；选择标题、版次和来源关系。
+- **导入页**：选择原文，填写标题和版次。列出已入库文件，可删除指定文件的全部向量。
 - **切片设置**：切片策略下拉框，chunk size/overlap 下拉框；显示默认值和单位；不允许 overlap 超范围。
 - **Embedding 设置**：profile 下拉框显示供应方、模型 ID、维度、local/cloud、连通状态；不可用 profile 不可提交。
-- **预览区**：显示前 10 个 chunk 的原文、页码、章节、条款、类型和长度；明确提示“预览不会入库”。
+- **预览区**：显示全部 chunk 的正文。每条来源信息只显示原文文件、章节、原文页码、条款、内容类型。明确提示“预览不会入库”。
 - **任务列表**：显示进度阶段、状态、错误、导入时间、配置快照和 chunk 数。刷新页面仍能恢复任务状态。
 - **文档详情/审核**：可查看原始文件元数据、DocMind 文件、索引配置、chunk、审核状态；审核前显示原文/PDF 可访问链接。
 - **失败和重试**：只对可重试阶段重试；重试沿用原始 SHA 和参数快照。修改 chunk 或 embedding 后创建新的 index version。

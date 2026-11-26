@@ -2,17 +2,61 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "MCP",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "rag.mcp_server",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "envFile": "${workspaceFolder}/.env",
+      "justMyCode": true
+    },
+    {
+      "name": "API",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["rag.web:app", "--host", "127.0.0.1", "--port", "8000"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "envFile": "${workspaceFolder}/.env",
+      "justMyCode": true
+    },
+    {
+      "name": "前端",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/frontend",
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "http://127\\.0\\.0\\.1:5173",
+        "uriFormat": "http://127.0.0.1:5173"
+      }
+    },
+    {
       "name": "解析 CJJ 181 PDF",
       "type": "debugpy",
       "request": "launch",
       "program": "${workspaceFolder}/docmind_parse.py",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "envFile": "${workspaceFolder}/.env",
       "args": [
         "docs/CJJ 181-2012 城镇排水管道检测与评估技术规程.pdf",
         "--output-dir",
         "data/docmind/cjj-181-2012"
       ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "启动工作台",
+      "configurations": ["MCP", "API", "前端"],
+      "stopAll": true
     }
   ]
 }

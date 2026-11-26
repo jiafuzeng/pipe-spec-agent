@@ -49,7 +49,8 @@ flowchart LR
 
 | 层 | 首版建议 | 职责 |
 |---|---|---|
-| Web 与 API | Python 3.11+、FastAPI 单页 | 页面包含对话、计划与 MCP 日志、当前槽位；API 管理会话和事件 |
+| 前端 | React，独立进程 | 页面包含对话、计划与 MCP 日志、当前槽位；不由 API 进程提供 |
+| API | Python 3.11+、FastAPI | 只管理会话、导入、审核和健康检查，不返回页面 |
 | Agent 编排 | Python 显式状态机/流程编排器、Pydantic | 受控节点、追问暂停/恢复、参数校验和调用轨迹；不引入不必要的工作流框架 |
 | RAG 入库与检索 | LlamaIndex `IngestionPipeline` + Chroma 本地持久化 + BM25 + reranker | Web 导入并预览切片、选择 embedding profile；保留原文/DocMind 页码与版面 metadata；BM25 与向量候选合并去重后直接 rerank，不使用 RRF |
 | MCP | FastMCP 独立进程、Streamable HTTP | 隔离条款/参数查询、确定性计算和绘图；强 Schema、调用记录和超时策略 |
@@ -58,7 +59,7 @@ flowchart LR
 | 图表 | Matplotlib 输出 PNG | 绘图工具基于计算点生成图片和坐标数据，前端直接展示 |
 | 会话与日志 | 演示版按 `session_id` 存在进程内存 | 满足单实例现场演示；明确进程重启会清空会话。多实例/长期保存不列入首版 |
 | 模型接入 | OpenAI 兼容 HTTP 接口，密钥/地址放环境变量 | 模型只处理意图、槽位抽取、规划和行文；供应商可替换 |
-| 部署 | Docker Compose | Web、MCP 两个服务和静态数据；提供健康检查及核验数据初始化 |
+| 部署 | Docker Compose | 前端、API、MCP 三个服务；前端把 `/api` 转到 API，并提供健康检查 |
 
 技术依赖应在实现前用锁文件固定版本。MCP 调用失败按项目基线最多重试一次；再次失败则停止本轮计算并明确展示失败。模型供应商封装为接口，便于演示环境更换模型；无模型时仍可独立演练检索、查表与计算工具。
 

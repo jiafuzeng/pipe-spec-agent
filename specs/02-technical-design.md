@@ -4,8 +4,9 @@
 
 | 层次 | 选择 | 理由 |
 | --- | --- | --- |
-| 语言 | Python 3.11+ | 计算、绘图、MCP 和 Web 在同一语言里测试 |
-| Web | FastAPI，单页聊天界面 | 现场演示需要会话、日志和图片，不需要多页应用 |
+| 语言 | Python 3.11+ | 计算、绘图、MCP 和 API 在同一语言里测试 |
+| 前端 | 独立的 React 应用（`frontend/`） | 页面、样式和浏览器状态不进入 API 进程。开发时由 Vite 提供，部署时由 nginx 提供 |
+| API | FastAPI，只提供 HTTP 接口 | 会话、导入、审核和健康检查走 `/api` 与 `/health`。API 不返回页面 |
 | 工具层 | 独立进程的 MCP 服务（FastMCP，Streamable HTTP） | 任务要求工具经 MCP 调用，调用记录与 Agent 进程分离 |
 | RAG 入库与检索 | LlamaIndex `IngestionPipeline` + `SentenceSplitter` / `MarkdownNodeParser` + Chroma 持久化 + BM25 + reranker | Web 可选择切片和 embedding profile；源文档、DocMind layout、页码及版面 metadata 随 node 保存；BM25 与向量候选合并去重后直接由 reranker 重排，不使用 RRF |
 | Embedding | LlamaIndex Ollama / DashScope integrations；profile 由服务端注册表配置 | Web 只选择已配置模型，不接触凭证；模型 ID、版本、维度与索引版本绑定，改模型必须重建向量 |
@@ -20,21 +21,23 @@
 
 ```
 浏览器
-  └─ Web（FastAPI）
-       ├─ 会话槽位（按 session_id 存在内存，演示足够）
-       ├─ 编排器
-       │    ├─ 意图识别
-       │    ├─ 槽位检查
-       │    ├─ 规划
-       │    ├─ 检索
-       │    └─ 回答组装
-       └─ MCP 客户端
-            └─ MCP 服务（另一进程）
-                 ├─ 缺陷分值
-                 ├─ K / E / T 查表
-                 ├─ 结构性 / 功能性计算
-                 ├─ RI / MI
-                 └─ 曲线图
+  └─ 前端（React，另一进程）
+       └─ /api（开发时 Vite 反代，部署时 nginx 反代）
+            └─ API（FastAPI，不提供页面）
+                 ├─ 会话槽位（按 session_id 存在内存，演示足够）
+                 ├─ 编排器
+                 │    ├─ 意图识别
+                 │    ├─ 槽位检查
+                 │    ├─ 规划
+                 │    ├─ 检索
+                 │    └─ 回答组装
+                 └─ MCP 客户端
+                      └─ MCP 服务（另一进程）
+                           ├─ 缺陷分值
+                           ├─ K / E / T 查表
+                           ├─ 结构性 / 功能性计算
+                           ├─ RI / MI
+                           └─ 曲线图
 ```
 
 知识文件：
@@ -80,7 +83,7 @@ BM25 与向量索引只包含 `approved` 内容，并与来源版本、分块规
 
 Web 上传原始 PDF 时，后端复用 DocMind 生成 JSON/Markdown；已有 `data/docmind/{document_id}/document.json` 时优先使用 JSON 中的 `Data.layouts`，避免重复解析。原始文件以 SHA-256 标识并保存为不可变版本。具体格式、API、metadata、切片配置、预览和验收场景见 `006-rag-ingestion-v1.md`。
 
-LlamaIndex `Document`/Node Parser 负责将已清洗的结构块切成 nodes，`IngestionPipeline` 将所选 embedding integration 生成的向量写入本地 Persistent Chroma。默认结构优先切片，chunk size 512 tokens、overlap 64；允许结构优先与固定 SentenceSplitter 两种方式。SQLite 保存导入任务、审核状态、原文元数据和索引版本；原文 PDF/DocMind 文件留在 `data/knowledge`。
+LlamaIndex `Document`/Node Parser 负责将已清洗的结构块切成 nodes，`IngestionPipeline` 将所选 embedding integration 生成的向量写入本地 Persistent Chroma。默认结构优先切片，chunk size 512 tokens、overlap 64。可选策略见 `006-rag-ingestion-v1.md`：句子、Token、Markdown 标题、句子窗口、层次、语义和语义双合并。SQLite 保存导入任务、审核状态、原文元数据和索引版本；原文 PDF/DocMind 文件留在 `data/knowledge`。
 
 每个 node 和 Chroma collection 都绑定 `source_doc_id`、原文 SHA、PDF 页序、章节/条款、DocMind layout ID、切片配置哈希、embedding profile/model version/dimension、review status。行政元数据可过滤但不参与 embedding 文本；页码和条款不可从缺失数据中推断。新导入内容默认 `pending_review`，向量检索按 `approved` metadata 过滤。索引使用 staging collection，完整成功后才注册为可用版本；失败不覆盖已有活动索引。
 
@@ -119,6 +122,8 @@ LlamaIndex `Document`/Node Parser 负责将已清洗的结构块切成 nodes，`
 这些行为写进自查说明的「失败策略」一节，并在测试里至少覆盖超时和未命中各一次。
 
 ## 8. 界面
+
+页面由独立前端提供。FastAPI 不挂载页面，也不把构建产物打进 API 镜像。浏览器只打开前端地址。前端以相对路径请求 `/api`；开发服务器和前端容器把该路径转到 API，因此页面与接口可以分别构建、分别启动。直接从另一个源站调用 API 时，API 按 `CORS_ORIGINS` 放行来源，默认包含本机前端开发地址。
 
 单页三区：对话、规划与 MCP 日志、当前槽位。计算得到的 PNG 显示在对应回答下方，并提供原图链接。演示分辨率以笔记本浏览器全屏为准。
 
