@@ -42,6 +42,10 @@
 
 混合检索返回的仍是原文证据。检索分数和排序不能单独作为作答依据；相关度不足、证据冲突或内容不支持结论时，必须澄清或拒答。
 
+### KN-07 来源元数据和审核门禁
+
+每个索引 node 必须关联不可变的来源文档版本：原始文件名、原文 SHA-256、版次、PDF 页序、审核状态；存在 DocMind layout 时保留 layout ID/index/type。导入和向量化成功不能自动把内容标为已核验；新版本默认 `pending_review`，召回必须过滤为 `approved`。Web 导入、切片、embedding 和 Chroma 元数据契约见 `006-rag-ingestion-v1.md`。
+
 ## 接口契约（逻辑）
 
 ```json

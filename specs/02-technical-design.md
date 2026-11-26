@@ -7,7 +7,8 @@
 | 语言 | Python 3.11+ | 计算、绘图、MCP 和 Web 在同一语言里测试 |
 | Web | FastAPI，单页聊天界面 | 现场演示需要会话、日志和图片，不需要多页应用 |
 | 工具层 | 独立进程的 MCP 服务（FastMCP，Streamable HTTP） | 任务要求工具经 MCP 调用，调用记录与 Agent 进程分离 |
-| 检索 | 条款 JSONL + BM25 + 本地向量索引 + reranker | 关键词与语义双路候选合并去重后由 reranker 重排，返回可追溯证据；索引可本地构建，不依赖独立向量服务 |
+| RAG 入库与检索 | LlamaIndex `IngestionPipeline` + `SentenceSplitter` / `MarkdownNodeParser` + Chroma 持久化 + BM25 + reranker | Web 可选择切片和 embedding profile；源文档、DocMind layout、页码及版面 metadata 随 node 保存；BM25 与向量候选合并去重后直接由 reranker 重排，不使用 RRF |
+| Embedding | LlamaIndex Ollama / DashScope integrations；profile 由服务端注册表配置 | Web 只选择已配置模型，不接触凭证；模型 ID、版本、维度与索引版本绑定，改模型必须重建向量 |
 | 模型 | OpenAI 兼容 HTTP 接口，地址和密钥放在环境变量 | 模型只做意图、槽位抽取、规划和行文。换模型不改计算 |
 | 数值 | `decimal.Decimal` | 等级边界用精确值比较 |
 | 绘图 | Matplotlib 输出 PNG | 图片由工具生成，界面直接显示 |
@@ -41,7 +42,8 @@
 ```
 kb/clauses.jsonl     # 一条条款一行：clause_id, text, page
 kb/tables/*.yaml     # 人工核对后的分值表和参数表
-kb/index/            # BM25 与向量索引；记录语料、分块和 embedding 模型版本
+data/knowledge/      # 原始文件、DocMind 产物、registry.sqlite、Persistent Chroma
+kb/index/            # BM25 与活动索引版本；记录语料、切片和 embedding 模型版本
 ```
 
 代码目录在实现阶段按这个边界建立，不把查表逻辑复制进编排器。
@@ -73,6 +75,14 @@ kb/index/            # BM25 与向量索引；记录语料、分块和 embedding
 BM25 与向量索引只包含 `approved` 内容，并与来源版本、分块规则和 embedding 模型版本绑定；任一变更时重建索引。混合召回的分数不是法规依据，只有通过审核的原文证据可以进入回答。
 
 结构性缺陷分值、K、E、T、等级阈值不走「让模型从 OCR 文本里读数字」，走 YAML 查表工具，避免水印导致 OCR 串值。YAML 的核对是 T1 的完成条件。
+
+## 4.1 文档导入与向量索引 V1
+
+Web 上传原始 PDF 时，后端复用 DocMind 生成 JSON/Markdown；已有 `data/docmind/{document_id}/document.json` 时优先使用 JSON 中的 `Data.layouts`，避免重复解析。原始文件以 SHA-256 标识并保存为不可变版本。具体格式、API、metadata、切片配置、预览和验收场景见 `006-rag-ingestion-v1.md`。
+
+LlamaIndex `Document`/Node Parser 负责将已清洗的结构块切成 nodes，`IngestionPipeline` 将所选 embedding integration 生成的向量写入本地 Persistent Chroma。默认结构优先切片，chunk size 512 tokens、overlap 64；允许结构优先与固定 SentenceSplitter 两种方式。SQLite 保存导入任务、审核状态、原文元数据和索引版本；原文 PDF/DocMind 文件留在 `data/knowledge`。
+
+每个 node 和 Chroma collection 都绑定 `source_doc_id`、原文 SHA、PDF 页序、章节/条款、DocMind layout ID、切片配置哈希、embedding profile/model version/dimension、review status。行政元数据可过滤但不参与 embedding 文本；页码和条款不可从缺失数据中推断。新导入内容默认 `pending_review`，向量检索按 `approved` metadata 过滤。索引使用 staging collection，完整成功后才注册为可用版本；失败不覆盖已有活动索引。
 
 ## 5. 智能问数与记忆
 

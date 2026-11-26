@@ -42,6 +42,10 @@
 
 每一轮展示规划步骤，以及每次 MCP 的工具名、入参和返回摘要。工具失败时展示失败记录。
 
+### R8 知识库文档导入（V1）
+
+管理员可在 Web 导入原始 PDF/Markdown 或关联已有 DocMind JSON/Markdown 产物，选择 LlamaIndex 切片策略、chunk size、overlap 和已配置的 embedding profile。导入前可预览 chunk 与来源元数据；导入后可查看任务进度、原文版本、chunk、索引配置和审核状态。只有人工审核通过的文档可进入问答检索。详细验收见 `006-rag-ingestion-v1.md`。
+
 ## 3. 九题验收场景
 
 下列场景是必做题的通过标准。文字题的通过标准是「引用到指定条款且不添加规程外数值」。计算题的通过标准是「槽位行为正确，且在参数给定后与 `03-calculation.md` 的算例一致」。

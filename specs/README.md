@@ -11,6 +11,7 @@
 - [002 Agent 规划、追问与会话状态](002-agent-dialogue.md)
 - [003 计算、MCP 与曲线](003-calculation-mcp.md)
 - [004 Web 演示与项目交付](004-web-demo-and-deliverables.md)
+- [006 RAG 文档导入与向量索引 V1](006-rag-ingestion-v1.md)
 - [03 计算规则规格](03-calculation.md)
 - [04 接口与参数槽位规格](04-interfaces.md)
 - [05 实施任务与交付门禁](05-tasks.md)
@@ -39,4 +40,5 @@
 | 唯一知识源、混合检索与重排、条款号、无依据拒答 | 00、01、001 | KN-01 至 KN-07 |
 | 规划、参数追问、同会话记忆 | 00、01、002 | AG-01 至 AG-06 |
 | 缺陷分值、RI/MI、绘图与 MCP | 00、01、003 | CAL-01 至 CAL-08 |
-| Web、九题演示、答卷和自查说明 | 01、004 | WEB-01 至 WEB-06 |
+| Web、九题演示、知识库导入、答卷和自查说明 | 01、004 | WEB-01 至 WEB-09 |
+| LlamaIndex 文档切片、embedding 选择、Chroma 持久化与来源 metadata | 01、001、004、006 | R8、KN-07、WEB-07 至 WEB-09、ING-01 至 ING-09 |
