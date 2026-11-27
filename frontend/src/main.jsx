@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Chat } from "./Chat.jsx";
 import { ImportPage } from "./Knowledge.jsx";
+import { RagEval } from "./RagEval.jsx";
 import "./style.css";
-const pages = { chat: "规程问答", import: "导入文档" };
+const pages = { chat: "规程问答", import: "导入文档", ragEval: "RAG 评测" };
 function activePage() {
   return Object.hasOwn(pages, location.hash.slice(1))
     ? location.hash.slice(1)
@@ -36,6 +37,7 @@ function App() {
           {nav("chat", "◉")}
           <small>知识库</small>
           {nav("import", "＋")}
+          {nav("ragEval", "▤")}
         </nav>
         <footer>CJJ 181—2012</footer>
       </aside>
@@ -46,6 +48,7 @@ function App() {
         <div hidden={page !== "import"}>
           <ImportPage />
         </div>
+        {page === "ragEval" && <RagEval />}
       </main>
     </div>
   );

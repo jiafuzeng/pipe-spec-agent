@@ -10,6 +10,7 @@ window.document.body.innerHTML = '<div id="root"></div>';
 let messages = [];
 let documents = [];
 let approved = false;
+let modelAvailable = false;
 const chunks = [
   {
     text: "测试条款",
@@ -26,6 +27,8 @@ const chunks = [
   },
 ];
 window.fetch = async (url, opts = {}) => {
+  if (url.endsWith("/rag-eval?mode=hybrid")) return Response.json({detail:"暂无混合报告"}, {status:404});
+  if (url.endsWith("/rag-eval?mode=bm25")) return Response.json(JSON.parse(readFileSync("../ragEval/bm25_scores.json", "utf8")));
   if (url.endsWith("/limits"))
     return Response.json({
       chunk_strategies: [
@@ -44,7 +47,7 @@ window.fetch = async (url, opts = {}) => {
     });
   if (url.endsWith("embedding-profiles"))
     return Response.json([
-      { profile_id: "ollama:bge-m3", available: true, dimension: 1024 },
+      { profile_id: "ollama:bge-m3", available: modelAvailable, dimension: 1024, health_status: "请检查 Ollama 服务" },
     ]);
   if (url === "/api/v1/sessions") return Response.json({ session_id: "trial" });
   if (url.endsWith("/turns")) {
@@ -147,6 +150,11 @@ assert.match(doc.querySelector(".chunks").textContent, /条款/);
 assert.match(doc.querySelector(".chunks").textContent, /内容类型/);
 assert.match(doc.querySelector(".chunks").textContent, /正文/);
 assert.match(doc.querySelector(".chunks").textContent, /test\.pdf/);
+assert.equal(form.querySelector("[value=build]").disabled, true);
+assert.match(form.querySelector('[role=status]').textContent, /请检查 Ollama 服务/);
+modelAvailable = true;
+form.querySelector(".actions button[type=button]").click();
+await tick();
 assert.equal(form.querySelector("[value=build]").disabled, false);
 form.requestSubmit(form.querySelector("[value=build]"));
 await tick();
@@ -163,5 +171,21 @@ assert.equal(doc.querySelector(".review"), null);
 console.log(
   "PASS: React navigation, nine questions, SSE, import preview and task creation",
 );
+window.location.hash = "ragEval";
+window.dispatchEvent(new window.Event("hashchange"));
+await tick();
+assert.match(doc.querySelector(".eval-page").textContent, /暂无混合报告/);
+const mode = doc.querySelector(".eval-page select");
+mode.value = "bm25";
+mode.dispatchEvent(new window.Event("change", { bubbles: true }));
+await tick();
+assert.equal(doc.querySelectorAll(".eval-case").length, 30);
+assert.match(doc.querySelector(".eval-case").textContent, /正文 100 分 · 引用 100 分/);
+const filter = doc.querySelector("[aria-label=筛选评测题目]");
+filter.value = "outside";
+filter.dispatchEvent(new window.Event("change", { bubbles: true }));
+await tick();
+assert.equal(doc.querySelectorAll(".eval-case").length, 2);
+assert.match(doc.querySelector(".eval-case").textContent, /库外题 · 不计分/);
 await window.happyDOM.abort();
 await window.close();

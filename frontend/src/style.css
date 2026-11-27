@@ -645,3 +645,24 @@ figure th {
   text-align: left;
   border-bottom: 1px solid var(--line);
 }
+
+.eval-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.eval-metrics > div {
+  padding: 15px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.eval-metrics strong { display: block; font-size: 24px; color: var(--green); }
+.eval-case { border-top: 1px solid var(--line); }
+.eval-page summary { cursor: pointer; padding: 10px 0; }
+.eval-case summary small { margin-right: 8px; color: var(--muted); }
+.eval-case summary span { display: block; margin-left: 1em; color: var(--green); }
+.eval-detail { padding: 8px 16px 16px; background: var(--sand); }
+.eval-detail blockquote { margin: 8px 0 16px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.eval-page .pagehead select { width: auto; }

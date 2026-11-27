@@ -163,21 +163,41 @@ export function ImportPage() {
     [revision, setRevision] = useState(0),
     [busy, setBusy] = useState(""),
     [error, setError] = useState("");
-  useEffect(() => {
-    if (!offline)
-      request(api + "/embedding-profiles")
-        .then((items) => {
-          setProfiles(items);
-          setProfile((p) => items.find((x) => x.available)?.profile_id || p);
+  const [checking, setChecking] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const selected = profiles.find((p) => p.profile_id === profile);
+  async function checkProfiles() {
+    setChecking(true);
+    setProfileError("");
+    try {
+      const items = await request(api + "/embedding-profiles");
+      setProfiles(items);
+      if (!items.some((p) => p.profile_id === profile && p.available)) {
+        const available = items.find((p) => p.available);
+        if (available && available.profile_id !== profile) {
+          setProfile(available.profile_id);
           setPreview(null);
-        })
-        .catch((e) => setError(e.message));
-      request(api + "/limits")
-        .then((limits) => {
-          if (limits.chunk_strategies?.length) setStrategies(limits.chunk_strategies);
-        })
-        .catch((e) => setError(e.message));
+        }
+      }
+    } catch (e) {
+      setProfiles([]);
+      setProfileError("无法获取模型状态，请检查后端连接。" + e.message);
+    } finally {
+      setChecking(false);
+    }
+  }
+  useEffect(() => {
+    if (offline) return;
+    checkProfiles();
+    request(api + "/limits")
+      .then((limits) => {
+        if (limits.chunk_strategies?.length) setStrategies(limits.chunk_strategies);
+      })
+      .catch((e) => setError(e.message));
   }, []);
+  const modelHint = checking
+    ? "正在检查向量模型连接…"
+    : profileError || (!selected?.available && (selected?.health_status || "没有可用的向量模型。"));
   async function submit(e) {
     e.preventDefault();
     const mode = e.nativeEvent.submitter?.value || "preview";
@@ -308,7 +328,13 @@ export function ImportPage() {
               </label>
             </div>
             <div className="actions">
-              <small>预览不会写入向量库。</small>
+              <small role="status">
+                {offline ? "请通过前端服务打开此页面。" :
+                  [!preview && "请先预览切片。", modelHint].filter(Boolean).join(" ") || "切片已预览，可以创建导入任务。"}
+              </small>
+              {!offline && modelHint && (
+                <button type="button" disabled={checking} onClick={checkProfiles}>重新检测模型</button>
+              )}
               <button disabled={offline} value="preview">
                 {busy === "preview" ? "正在预览…" : "预览切片"}
               </button>
@@ -317,7 +343,7 @@ export function ImportPage() {
                 disabled={
                   offline ||
                   !preview ||
-                  !profiles.some((p) => p.profile_id === profile && p.available)
+                  checking || !selected?.available
                 }
                 value="build"
               >

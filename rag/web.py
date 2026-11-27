@@ -64,9 +64,13 @@ def health(profile):
             available=dimension > 0, dimension=dimension, health_status="connected"
         )
     except Exception:
-        return result | dict(
-            available=False, dimension=None, health_status="请检查服务连接和凭证"
-        )
+        if profile == "ollama:bge-m3":
+            reason = "请检查后端 OLLAMA_BASE_URL、Ollama 服务及 bge-m3 模型"
+        elif not os.getenv("DASHSCOPE_API_KEY"):
+            reason = "后端未配置 DASHSCOPE_API_KEY"
+        else:
+            reason = "请检查 DashScope 服务连接和凭证"
+        return result | dict(available=False, dimension=None, health_status=reason)
 
 
 @app.get(API + "/embedding-profiles")
@@ -321,3 +325,12 @@ def limits():
             {"id": item[0], "label": item[1]} for item in STRATEGIES
         ],
     }
+
+@app.get(API + "/rag-eval")
+def rag_eval(mode: str = "bm25"):
+    if mode not in {"bm25", "hybrid"}:
+        raise HTTPException(422, "未知评测方式")
+    path = Path(__file__).resolve().parents[1] / "ragEval" / f"{mode}_scores.json"
+    if not path.is_file():
+        raise HTTPException(404, f"暂无评测报告，请先运行 ragEval/retrieval.py 生成 {mode}_scores.json")
+    return FileResponse(path, media_type="application/json", headers={"Cache-Control": "no-store"})

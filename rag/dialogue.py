@@ -44,6 +44,19 @@ async def call_tool(name, args):
 
 
 async def select_evidence(query, evidence):
+    from rag.search import clause_mentioned
+
+    passages = []
+    for item in evidence:
+        spans = item.get("citation_spans")
+        if not spans:
+            passages.append(item)
+            continue
+        for i, span in enumerate(spans):
+            passages.append(dict(item, evidence_id=f"{item['evidence_id']}:{i}",
+                                 clause_no=span["clause"], quote=span["quote"],
+                                 page_pdf=span["page"], exact=clause_mentioned(span["clause"], query)))
+    evidence = passages
     exact = [item for item in evidence if item["exact"]]
     if re.fullmatch(r"\s*(?:第|表)?\s*\d+\.\d+\.\d+(?:-\d+)?\s*(?:条)?\s*", query):
         return exact

@@ -37,6 +37,20 @@
       }
     },
     {
+      "name": "当前文件",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "justMyCode": true
+    },
+    {
       "name": "解析 CJJ 181 PDF",
       "type": "debugpy",
       "request": "launch",

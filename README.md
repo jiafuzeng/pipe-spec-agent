@@ -31,7 +31,7 @@ npm run dev
 容器入口为 `docker compose up --build`，Compose 从项目 .env 读取配置；容器里同样打开 http://127.0.0.1:5173，API 映射在 8000。
 
 - Embedding 使用 `OLLAMA_BASE_URL` 上的 bge-m3，请求为 `POST /api/embed`，正文是 `{"model":"bge-m3","input":"..."}`。当前地址是 http://192.168.1.100:11434。OLLAMA_MODEL_VERSION 记录模型版本。DashScope 使用 DASHSCOPE_API_KEY 和 DASHSCOPE_MODEL_VERSION。
-- 自然语言检索需要 RERANKER_MODEL（本地 CrossEncoder 路径或模型 ID）。证据筛选使用 CHAT_BASE_URL（含 /v1）、CHAT_MODEL、CHAT_API_KEY。两个进程从 .env 或服务端环境变量读取配置。
+- 远程重排在后端 .env 配置 RERANKER_BASE_URL、RERANKER_MODEL=qwen3-rerank 和 RERANKER_API_KEY，使用 POST /rerank。未指定远程地址时，RERANKER_MODEL 支持本地 CrossEncoder。证据筛选使用 CHAT_BASE_URL（含 /v1）、CHAT_MODEL、CHAT_API_KEY。两个进程从 .env 或服务端环境变量读取配置。
 - 导入演示选择 docs 下的 PDF。页面只上传原文；没有现成解析结果时，后端调用 DocMind，因此 PDF 直传需要服务凭证。
 - 查看机制和验收接口可访问 http://127.0.0.1:8000/docs。未审核索引不可用于问答。没有证据时走固定拒答，依赖服务失败时单独报告错误。
 - KNOWLEDGE_DIR 默认 data/knowledge。停止 API 与 MCP 后整体备份或恢复该目录，包括原文、解析产物、SQLite、Chroma。中断的构建在 API 重启时标为失败，可重新提交原始输入。当前采用单 API worker，本地演示会话保存在内存。
