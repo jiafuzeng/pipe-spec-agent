@@ -79,7 +79,7 @@ def answer_evidence(intent: str, query: str, evidence) -> list[dict]:
     return rows
 
 
-def render_compare(query: str, evidence) -> str | None:
+def render_compare(query: str, evidence, table: bool = False) -> str | None:
     evidence = answer_evidence("compare", query, evidence)
     if not evidence:
         return None
@@ -109,9 +109,19 @@ def render_compare(query: str, evidence) -> str | None:
                 continue
             break
     conclusion = " ".join(conditions) or "本轮条款未明确给出所比较方法的选择条件。"
-    sections.append(
-        "选择结论：" + conclusion + " 仅凭本轮信息无法确定现场应选哪一种方法。"
-    )
+    ending = "选择结论：" + conclusion + " 仅凭本轮信息无法确定现场应选哪一种方法。"
+    if table:
+        lines = ["| 方法 | 条款 |", "| --- | --- |"]
+        for name, aliases in requested:
+            hits = [row for row in evidence if _mentions(row["quote"], aliases)]
+            cell = "<br>".join(
+                f"〔{item['clause_no']}〕{item['quote']}" for item in hits
+            ) or "未检索到直接写明该方法的条款。"
+            lines.append(f"| {name} | {cell} |")
+        lines.append("")
+        lines.append(ending)
+        return "\n".join(lines)
+    sections.append(ending)
     return "\n\n".join(sections)
 
 

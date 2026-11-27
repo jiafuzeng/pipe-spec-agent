@@ -1,7 +1,10 @@
 .env
 .venv/
+venv/
 __pycache__/
 *.py[cod]
+dist/
+*.egg-info/
 
 data/knowledge/
 data/mcp/

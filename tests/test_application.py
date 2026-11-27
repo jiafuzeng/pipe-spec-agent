@@ -173,16 +173,33 @@ class ApplicationTests(unittest.TestCase):
             query = "计算 RI F=6 K=0 E=6 T=0"
             state = {"run": "run", "pending": "RI", "rule_version": version}
             store.start(sid, "A", "run", "turn", query, state, 0)
-            store.checkpoint(
-                "turn",
-                "calculate",
-                {
-                    "query": query,
-                    "kind": "RI",
-                    "schema": {"rule_version": version},
-                    "values": {"F": "6", "K": "0", "E": "6", "T": "0"},
-                },
-            )
+
+            async def seed():
+                from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+
+                from app.agent.workflow import compile_graph
+                from app.config import langgraph_path
+
+                path = langgraph_path(store.path)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                async with AsyncSqliteSaver.from_conn_string(str(path)) as saver:
+                    graph = compile_graph(saver)
+                    await graph.aupdate_state(
+                        {"configurable": {"thread_id": sid}},
+                        {
+                            "resume_at": "calculate",
+                            "query": query,
+                            "kind": "RI",
+                            "schema": {"rule_version": version},
+                            "values": {"F": "6", "K": "0", "E": "6", "T": "0"},
+                            "active_subject_id": "A",
+                        },
+                        as_node="__start__",
+                    )
+
+            import asyncio
+
+            asyncio.run(seed())
             tool = AsyncMock(side_effect=call_tool)
             with TestClient(create_app(store, tool)) as api:
                 self.assertEqual(api.get("/api/v1/runs/run").status_code, 200)

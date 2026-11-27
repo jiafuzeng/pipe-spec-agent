@@ -19,7 +19,7 @@ class Store:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as db:
             db.executescript("""
-                CREATE TABLE IF NOT EXISTS sessions(id TEXT PRIMARY KEY, created_at TEXT);
+                CREATE TABLE IF NOT EXISTS sessions(id TEXT PRIMARY KEY, created_at TEXT, title TEXT);
                 CREATE TABLE IF NOT EXISTS subjects(sid TEXT, id TEXT, version INTEGER, body TEXT,
                                                   PRIMARY KEY(sid,id));
                 CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY, sid TEXT, subject TEXT,
@@ -32,6 +32,9 @@ class Store:
                 CREATE TABLE IF NOT EXISTS steps(id TEXT PRIMARY KEY, run TEXT, tool TEXT,
                                                  inputs TEXT, output TEXT, status TEXT);
             """)
+            columns = {row[1] for row in db.execute("PRAGMA table_info(sessions)")}
+            if "title" not in columns:
+                db.execute("ALTER TABLE sessions ADD COLUMN title TEXT")
 
     @contextmanager
     def connect(self):
@@ -46,8 +49,61 @@ class Store:
     def create(self):
         sid, created = uuid.uuid4().hex, now()
         with self.connect() as db:
-            db.execute("INSERT INTO sessions VALUES(?,?)", (sid, created))
+            db.execute(
+                "INSERT INTO sessions(id, created_at) VALUES(?,?)", (sid, created)
+            )
         return dict(session_id=sid, created_at=created, state="ready")
+
+    def list_sessions(self):
+        with self.connect() as db:
+            rows = db.execute(
+                """SELECT session_id, title, last_message, last_activity_at FROM (
+                       SELECT sessions.id AS session_id,
+                              sessions.title AS title,
+                              (SELECT turns.message FROM turns
+                               JOIN runs ON runs.id = turns.run
+                               WHERE runs.sid = sessions.id
+                               ORDER BY turns.rowid DESC LIMIT 1) AS last_message,
+                              (SELECT turns.created_at FROM turns
+                               JOIN runs ON runs.id = turns.run
+                               WHERE runs.sid = sessions.id
+                               ORDER BY turns.rowid DESC LIMIT 1) AS last_activity_at
+                       FROM sessions
+                   )
+                   WHERE last_message IS NOT NULL
+                   ORDER BY last_activity_at DESC"""
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def rename(self, sid, title):
+        title = title.strip()
+        with self.connect() as db:
+            found = db.execute("SELECT id FROM sessions WHERE id=?", (sid,)).fetchone()
+            if found is None:
+                return None
+            db.execute("UPDATE sessions SET title=? WHERE id=?", (title, sid))
+        return dict(session_id=sid, title=title)
+
+    def delete(self, sid):
+        with self.connect() as db:
+            if db.execute("SELECT id FROM sessions WHERE id=?", (sid,)).fetchone() is None:
+                return False
+            runs = [row[0] for row in db.execute("SELECT id FROM runs WHERE sid=?", (sid,))]
+            if runs:
+                marks = ",".join("?" * len(runs))
+                db.execute(f"DELETE FROM steps WHERE run IN ({marks})", runs)
+                db.execute(f"DELETE FROM run_events WHERE run IN ({marks})", runs)
+                db.execute(
+                    f"""DELETE FROM checkpoints WHERE turn IN (
+                            SELECT id FROM turns WHERE run IN ({marks})
+                        )""",
+                    runs,
+                )
+                db.execute(f"DELETE FROM turns WHERE run IN ({marks})", runs)
+                db.execute("DELETE FROM runs WHERE sid=?", (sid,))
+            db.execute("DELETE FROM subjects WHERE sid=?", (sid,))
+            db.execute("DELETE FROM sessions WHERE id=?", (sid,))
+        return True
 
     def session(self, sid):
         with self.connect() as db:
@@ -73,18 +129,19 @@ class Store:
             rows = db.execute(
                 """SELECT turns.id AS turn_id, run AS run_id, subject AS subject_id,
                                    message AS text FROM turns JOIN runs ON runs.id=turns.run
-                                   WHERE sid=? ORDER BY turns.rowid DESC LIMIT 30""",
+                                   WHERE sid=? ORDER BY turns.rowid""",
                 (sid,),
             ).fetchall()
-            messages = [dict(r, role="user") for r in reversed(rows)]
+            messages = [dict(r, role="user") for r in rows]
+            last = rows[-1] if rows else None
             return dict(
                 session_id=sid,
                 created_at=row["created_at"],
                 state="ready",
                 subjects=subjects,
                 messages=messages,
-                active_run_id=rows[0]["run_id"] if rows else None,
-                subject_id=rows[0]["subject_id"] if rows else "default",
+                active_run_id=last["run_id"] if last else None,
+                subject_id=last["subject_id"] if last else "default",
             )
 
     def subject(self, sid, subject):

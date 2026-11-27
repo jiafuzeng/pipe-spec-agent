@@ -3,6 +3,7 @@
 import asyncio
 import hashlib
 import json
+import os
 import re
 import time
 import uuid
@@ -28,6 +29,9 @@ from app.integrations.mcp_client import call_tool
 from app.rag.evidence import search_clauses, select_evidence
 
 REFUSAL = "依据 CJJ 181—2012 原文无相关规定，不作推测性补充。"
+WORKSTATION_ID = "workbench"
+MEMORY_NAMESPACE = (WORKSTATION_ID, "memories")
+MEMORY_LIMIT = 3
 
 
 class State(TypedDict, total=False):
@@ -43,6 +47,12 @@ class State(TypedDict, total=False):
     route: str
     ids: list
     resume_at: str
+    active_subject_id: str
+    confirmed: list
+    pending: list
+    recent_values: list
+    reused: dict
+    reused_note: str
 
 
 @dataclass
@@ -54,6 +64,7 @@ class Turn:
     version: int
     queue: asyncio.Queue
     tool_client: object = None
+    session_id: str = ""
 
     def emit(self, kind, data, status="running"):
         event = self.store.event(
@@ -109,9 +120,158 @@ class Turn:
         return output
 
 
+def _confirmed_rows(slots, subject_id, kind, turn_id):
+    rows = []
+    for name, slot in slots.items():
+        if not slot.get("confirmed"):
+            continue
+        rows.append(
+            {
+                "name": name,
+                "value": slot.get("value"),
+                "unit": slot.get("unit"),
+                "subject_id": subject_id,
+                "source_turn_id": slot.get("source_turn_id") or turn_id,
+                "confirmed": True,
+                "kind": kind,
+            }
+        )
+    return rows
+
+
+def uuid7():
+    unix_ms = int(time.time() * 1000) & ((1 << 48) - 1)
+    rand_a = int.from_bytes(os.urandom(2), "big") & 0x0FFF
+    rand_b = int.from_bytes(os.urandom(8), "big") & ((1 << 62) - 1)
+    return uuid.UUID(int=(unix_ms << 80) | (0x7 << 76) | (rand_a << 64) | (0b10 << 62) | rand_b)
+
+
+def _stamp(value):
+    return value.isoformat() if hasattr(value, "isoformat") else value
+
+
+def memory_view(item):
+    return {
+        "namespace": list(item.namespace),
+        "key": item.key,
+        "value": dict(item.value or {}),
+        "created_at": _stamp(item.created_at),
+        "updated_at": _stamp(item.updated_at),
+    }
+
+
+def _memory_action(query):
+    if "忘记" in query:
+        return "forget"
+    if re.search(r"还记得什么|记得什么|查看记忆", query):
+        return "list"
+    if "记住" in query:
+        return "remember"
+    return None
+
+
+def _memory_line(item):
+    data = (item.value or {}).get("data", "")
+    return f"{data}（{_stamp(item.updated_at)}，不是规程依据）"
+
+
+async def _search_memories(store, query, limit=MEMORY_LIMIT):
+    return await store.asearch(MEMORY_NAMESPACE, query=query, limit=limit)
+
+
+def _active_subject(state, ctx):
+    return state.get("active_subject_id") or ctx.subject.get("subject_id") or "default"
+
+
+async def _memory_turn(state: State, runtime: Runtime[Turn], action: str):
+    ctx = runtime.context
+    store = runtime.store
+    query = state["query"]
+    active = _active_subject(state, ctx)
+    if action == "list":
+        found = await _search_memories(store, query)
+        short_term = [
+            item
+            for item in (state.get("confirmed") or [])
+            if item.get("subject_id") == active
+        ]
+        lines = ["当前对话正在用的："]
+        lines.extend(
+            [f"- {item['name']}={item['value']}" for item in short_term] or ["- 无"]
+        )
+        lines.append("以后还会记得的：")
+        lines.extend(
+            [f"- {_memory_line(item)}" for item in found]
+            or ["- 没有可召回的长期记忆"]
+        )
+        ctx.emit(
+            "answer",
+            dict(
+                text="\n".join(lines),
+                short_term=short_term,
+                long_term=[memory_view(item) for item in found],
+            ),
+            "completed",
+        )
+        return {"route": "end"}
+    if action == "forget":
+        found = await store.asearch(MEMORY_NAMESPACE, limit=100)
+        named = next((item for item in found if item.key and item.key in query), None)
+        if named is None:
+            hint = re.sub(r"^.*忘记", "", query).strip(" ：:，,。")
+            matches = [
+                item
+                for item in found
+                if hint and hint in str((item.value or {}).get("data", ""))
+            ]
+            named = matches[0] if len(matches) == 1 else None
+        confirmed = list(state.get("confirmed") or [])
+        if named is None:
+            text = "没有这一条"
+        else:
+            await store.adelete(MEMORY_NAMESPACE, named.key)
+            data = str((named.value or {}).get("data", ""))
+            confirmed = [
+                item
+                for item in confirmed
+                if f"{item.get('name')}={item.get('value')}" not in data
+            ]
+            text = "已忘记。当前对话也不再沿用。"
+        left = await _search_memories(store, query)
+        ctx.emit(
+            "answer",
+            dict(text=text, long_term=[memory_view(item) for item in left]),
+            "completed",
+        )
+        return {"route": "end", "confirmed": confirmed}
+    pieces = [query.strip()]
+    confirmed = [
+        item
+        for item in (state.get("confirmed") or [])
+        if item.get("confirmed") and item.get("subject_id") in (None, active)
+    ]
+    if confirmed:
+        pieces.append(
+            "管段 "
+            + active
+            + " "
+            + " ".join(
+                f"{item['name']}={item['value']}{item.get('unit') or ''}"
+                for item in confirmed
+            )
+        )
+    data = " ".join(pieces)
+    await store.aput(MEMORY_NAMESPACE, str(uuid7()), {"data": data})
+    ctx.emit("answer", dict(text=f"已记住，不是规程依据：{data}"), "completed")
+    return {"route": "end"}
+
+
 async def plan(state: State, runtime: Runtime[Turn]):
     ctx = runtime.context
     q = state["query"]
+    action = _memory_action(q)
+    if action and runtime.store is not None:
+        return await _memory_turn(state, runtime, action)
     intent = classify_turn(q)
     if ctx.subject.get("continuing"):
         if ctx.subject.get("pending") == "plan":
@@ -241,8 +401,12 @@ async def verify(state: State, runtime: Runtime[Turn]):
 
 async def answer(state: State, runtime: Runtime[Turn]):
     q, intent, items = state["query"], state["intent"], state["evidence"]
+    table = False
+    if runtime.store is not None and intent == "compare":
+        remembered = await _search_memories(runtime.store, q)
+        table = any("表格" in str((item.value or {}).get("data", "")) for item in remembered)
     render = {
-        "compare": render_compare,
+        "compare": lambda query, evidence: render_compare(query, evidence, table=table),
         "plan": render_plan,
         "explain": render_explain,
     }.get(intent)
@@ -314,11 +478,85 @@ async def collect(state: State, runtime: Runtime[Turn]):
     ctx = runtime.context
     q, kind, rule = state["query"], state["kind"], state["schema"]
     sub = ctx.subject
+    active = state.get("active_subject_id") or sub.get("subject_id") or "default"
+    named = re.search(r"管段\s*([A-Za-z0-9_-]+)", q)
+    if named and named.group(1) != active:
+        ctx.emit(
+            "clarification_required",
+            dict(text="请确认要计算的管段。原管段已确认参数不会套用。"),
+            "waiting_clarification",
+        )
+        return {"route": "end", "active_subject_id": active, "pending": ["管段"]}
     slots = sub.setdefault("slots", {}).setdefault(kind, {})
     if sub.setdefault("versions", {}).get(kind) != rule["rule_version"]:
         slots.clear()
         sub.pop("observations", None)
         sub["versions"][kind] = rule["rule_version"]
+        kept = sub.pop("prefilled_slots", None)
+        if kept:
+            slots.update(kept)
+    if not slots:
+        for item in state.get("confirmed") or []:
+            if (
+                item.get("subject_id") == active
+                and item.get("confirmed")
+                and item.get("kind") in (None, kind)
+            ):
+                slots[item["name"]] = {
+                    "value": item.get("value"),
+                    "unit": item.get("unit"),
+                    "source_turn_id": item.get("source_turn_id"),
+                    "confirmed": True,
+                }
+    recent = [
+        dict(item)
+        for item in (state.get("recent_values") or sub.get("recent_values") or [])
+        if item.get("subject_id") in (None, active)
+    ]
+    spacing = re.search(r"间距(?:为|是)?\s*(\d+(?:\.\d+)?)(?:\s*(米|m))?", q)
+    if spacing and spacing.group(1) and not spacing.group(2):
+        ctx.emit(
+            "clarification_required",
+            dict(text="间距的单位不明，该项不会记入可复用内容。"),
+            "waiting_clarification",
+        )
+        return {"route": "end", "active_subject_id": active, "pending": ["间距"]}
+    if spacing and spacing.group(2):
+        recent = [
+            item for item in recent if item.get("name") != "间距"
+        ] + [
+            {
+                "name": "间距",
+                "value": spacing.group(1),
+                "unit": "米",
+                "subject_id": active,
+                "source_turn_id": ctx.turn,
+                "confirmed": True,
+            }
+        ]
+    reused_note = ""
+    referred = re.search(r"刚才那个\s*(\S+)", q)
+    if referred:
+        hint = referred.group(1).strip("，,。 ")
+        found = [
+            item
+            for item in recent
+            if hint in str(item.get("name")) or str(item.get("name")) in hint
+        ]
+        if len(found) != 1:
+            ctx.emit(
+                "clarification_required",
+                dict(text="不能确定「刚才那个」指哪一项。"),
+                "waiting_clarification",
+            )
+            return {"route": "end", "active_subject_id": active, "recent_values": recent}
+        reused_note = f"沿用{found[0]['name']}={found[0]['value']}{found[0].get('unit') or ''}"
+    previous = {
+        item["name"]: item.get("value")
+        for item in (state.get("confirmed") or [])
+        if item.get("subject_id") == active and item.get("kind") in (None, kind)
+    }
+    sub["recent_values"] = recent
     series = re.search(
         r"([KT])\s*(?:分别)?\s*(?:=|取值?为?|为)\s*(\d+(?:\.\d+)?(?:\s*[,，、]\s*\d+(?:\.\d+)?)+)",
         q,
@@ -327,6 +565,7 @@ async def collect(state: State, runtime: Runtime[Turn]):
         sub["curve"] = [series[1], re.split(r"\s*[,，、]\s*", series[2])]
     curve = sub.get("curve")
     missing, invalid = [], []
+    newly = set()
     fields = rule["fields"]
     implicit = [
         f
@@ -376,12 +615,27 @@ async def collect(state: State, runtime: Runtime[Turn]):
                 invalid.append(key)
             if series or not re.search(re.escape(key) + r"\s*[=:：]", q):
                 continue
-        match = re.search(
-            r"(?<![A-Za-z])" + re.escape(key) + r"\s*[=:：]\s*([^\s,，、。；;（）()]+)",
-            q,
+        pattern = (
+            r"(?<![A-Za-z])" + re.escape(key) + r"\s*[=:：]\s*([^\s,，、。；;（）()]+)"
         )
-        value = match[1] if match else extracted.get(key)
+        found_values = re.findall(pattern, q)
+        if len(set(found_values)) > 1:
+            ctx.emit(
+                "clarification_required",
+                dict(text=f"{key} 的取值冲突，确认前不计算。"),
+                "waiting_clarification",
+            )
+            return {
+                "route": "end",
+                "active_subject_id": active,
+                "pending": [key],
+                "recent_values": recent,
+                "confirmed": _confirmed_rows(slots, active, kind, ctx.turn),
+            }
+        match = found_values[0] if found_values else None
+        value = match if match is not None else extracted.get(key)
         if value is not None:
+            newly.add(key)
             if not valid(value, field):
                 invalid.append(key)
                 slots.pop(key, None)
@@ -401,6 +655,27 @@ async def collect(state: State, runtime: Runtime[Turn]):
             if key == "T" and facts.get("soil") in alternate.get("soil_columns", []):
                 continue
             missing.append(field)
+    denied = set()
+    for match in re.finditer(
+        r"(?:不是|不对|别用).{0,8}([A-Za-z]+|间距)|([A-Za-z]+|间距).{0,6}(?:不是|不对|别用)",
+        q,
+    ):
+        denied.add(next(group for group in match.groups() if group))
+    if denied & set(slots):
+        for name in denied & set(slots):
+            slots.pop(name, None)
+        ctx.emit(
+            "clarification_required",
+            dict(text="被否定的旧参数在确认更新前不进入计算。"),
+            "waiting_clarification",
+        )
+        return {
+            "route": "end",
+            "active_subject_id": active,
+            "pending": sorted(denied),
+            "recent_values": recent,
+            "confirmed": _confirmed_rows(slots, active, kind, ctx.turn),
+        }
     values = {k: v["value"] for k, v in slots.items()}
     if alternate:
         soil = facts.get("soil")
@@ -422,6 +697,22 @@ async def collect(state: State, runtime: Runtime[Turn]):
             facts.pop("soil", None)
         values.update(facts)
     sub["missing"] = missing
+    confirmed = _confirmed_rows(slots, active, kind, ctx.turn)
+    reused = {
+        key: value
+        for key, value in values.items()
+        if key not in newly and key in previous and previous[key] == value
+    }
+    short_term = {
+        "active_subject_id": active,
+        "confirmed": confirmed,
+        "pending": [
+            field["name"] if isinstance(field, dict) else field for field in missing
+        ],
+        "recent_values": recent,
+        "reused": reused,
+        "reused_note": reused_note,
+    }
     if invalid:
         ctx.emit(
             "error",
@@ -432,7 +723,7 @@ async def collect(state: State, runtime: Runtime[Turn]):
             ),
             "waiting_clarification",
         )
-        return {"route": "end"}
+        return {"route": "end", **short_term}
     if missing:
         alternatives = (
             {"F": ["F", "defects"], "E": ["E", "D"], "T": ["T", "soil"]}
@@ -457,8 +748,8 @@ async def collect(state: State, runtime: Runtime[Turn]):
             ),
             "waiting_clarification",
         )
-        return {"route": "end"}
-    return dict(values=values, route="calculate")
+        return {"route": "end", **short_term}
+    return dict(values=values, route="calculate", **short_term)
 
 
 async def calculate(state: State, runtime: Runtime[Turn]):
@@ -501,6 +792,18 @@ async def calculate(state: State, runtime: Runtime[Turn]):
             ids.append(output["result_id"])
         else:
             ctx.subject["pending"] = None
+            if state.get("reused") or state.get("reused_note"):
+                output = dict(output)
+                note = []
+                if state.get("reused"):
+                    output["reused"] = state["reused"]
+                    note.append(
+                        "沿用"
+                        + "、".join(f"{k}={v}" for k, v in state["reused"].items())
+                    )
+                if state.get("reused_note"):
+                    note.append(state["reused_note"])
+                output["text"] = "。".join(note)
             ctx.emit("answer", output, "completed")
     return dict(ids=ids, route="plot" if curve else "end")
 
@@ -533,29 +836,33 @@ async def plot(state: State, runtime: Runtime[Turn]):
     return {}
 
 
-def compile_graph():
+def compile_graph(checkpointer=None, store=None):
     builder = StateGraph(State, context_schema=Turn)
 
     def checkpointed(node):
         async def execute(state: State, runtime: Runtime[Turn]):
-            update = await node(state, runtime)
+            update = await node(state, runtime) or {}
             next_node = "verify" if node is retrieve else update.get("route", "end")
-            ctx = runtime.context
-            ctx.store.checkpoint(ctx.turn, next_node, state | update)
+            update = dict(update)
+            update["resume_at"] = "plan" if next_node == "end" else next_node
             return update
 
         return execute
+
+    def enter(state: State):
+        target = state.get("resume_at") or "plan"
+        return "plan" if target == "end" else target
 
     nodes = (plan, retrieve, verify, answer, schema, collect, calculate, plot)
     for node in nodes:
         builder.add_node(node.__name__, checkpointed(node))
     builder.add_conditional_edges(
         START,
-        lambda state: state.get("resume_at", "plan"),
+        enter,
         {node.__name__: node.__name__ for node in nodes} | {"end": END},
     )
     for name, targets in {
-        "plan": ["retrieve", "schema"],
+        "plan": ["retrieve", "schema", "end"],
         "verify": ["answer", "end"],
         "answer": ["schema", "end"],
         "schema": ["collect", "end"],
@@ -569,7 +876,17 @@ def compile_graph():
         )
     builder.add_edge("retrieve", "verify")
     builder.add_edge("plot", END)
-    return builder.compile()
+    return builder.compile(checkpointer=checkpointer, store=store)
 
 
 workflow = compile_graph()
+_graph = None
+
+
+def get_graph():
+    return _graph or workflow
+
+
+def set_graph(compiled):
+    global _graph
+    _graph = compiled

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { api, examples, offline, request, streamTurn } from "./api.js";
+import { createPortal } from "react-dom";
+import { api, deleteSession, examples, listSessions, offline, renameSession, request, streamTurn } from "./api.js";
 
 const names = [
   "目的与范围",
@@ -174,13 +175,13 @@ function Turn({ turn, send, disabled, live }) {
             </div>
           );
         if (type === "chart") {
-          const metadata = trace.find((e) => e.data.tool === "plot_curve" && e.data.output?.resource_id === data.resource_id)?.data.output || data;
+          const metadata = trace.find((e) => e.data?.tool === "plot_curve" && e.data.output?.resource_id === data.resource_id)?.data?.output || data;
           const imageUrl = "/api/v1/artifacts/" + data.resource_id;
           const [axis, metric] = (
             metadata.csv?.split(/\r?\n/)[0] || "自变量,指数"
           ).split(",");
           const pointCall = trace.find(
-            (e) => e.data.output?.result_id === metadata.result_ids?.[0],
+            (e) => e.data?.output?.result_id === metadata.result_ids?.[0],
           )?.data;
           return (
             <figure key={i}>
@@ -189,10 +190,10 @@ function Turn({ turn, send, disabled, live }) {
                 alt={metric + " 随 " + axis + " 变化的曲线"}
               />
               <figcaption>
-                {pointCall && (
+                {pointCall?.inputs && (
                   <>
                     规则版本 {pointCall.inputs.rule_version} · 固定参数{" "}
-                    {Object.entries(pointCall.inputs.parameters)
+                    {Object.entries(pointCall.inputs.parameters || {})
                       .filter(([k]) => k !== axis)
                       .map(([k, v]) => k + "=" + v)
                       .join("，")}
@@ -264,75 +265,119 @@ function Turn({ turn, send, disabled, live }) {
     </article>
   );
 }
-function restore() {
+const LAST_SESSION = "pipe.session";
+function savedSession() {
   try {
-    return (
-      JSON.parse(sessionStorage.getItem("pipe.chat")) || {
-        session: null,
-        turns: [],
-      }
-    );
+    return localStorage.getItem(LAST_SESSION) || sessionStorage.getItem(LAST_SESSION);
   } catch {
-    return { session: null, turns: [] };
+    return null;
   }
 }
+function rememberSession(session) {
+  try {
+    if (session) localStorage.setItem(LAST_SESSION, session);
+    else localStorage.removeItem(LAST_SESSION);
+    sessionStorage.removeItem(LAST_SESSION);
+  } catch {
+    /* 当次打开仍可继续聊 */
+  }
+}
+function recentWhen(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const delta = Date.now() - date.getTime();
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  if (delta < hour) return Math.max(1, Math.round(delta / minute)) + "分钟前";
+  if (delta < day) return Math.max(1, Math.round(delta / hour)) + "小时前";
+  return date.getMonth() + 1 + "月" + date.getDate() + "日";
+}
 export function Chat() {
-  const [chat, setChat] = useState(restore),
+  const [chat, setChat] = useState({ session: null, turns: [] }),
+    [sessions, setSessions] = useState([]),
     [input, setInput] = useState(""),
     [busy, setBusy] = useState(false),
     [subjects, setSubjects] = useState({}),
-    [status, setStatus] = useState("");
+    [status, setStatus] = useState(""),
+    [editing, setEditing] = useState(null),
+    [draft, setDraft] = useState(""),
+    [pendingDelete, setPendingDelete] = useState(null),
+    [menu, setMenu] = useState(null),
+    [more, setMore] = useState(false);
   const subject = chat.subject || "default";
-  const initialSession = useRef(chat.session);
-  useEffect(() => {
-    const session = initialSession.current;
-    if (!session || offline) return;
-    let cancelled = false;
-    async function recover() {
-      const snapshot = await request("/api/v1/sessions/" + session);
-      if (cancelled) return;
-      setSubjects(snapshot.subjects);
-      const messages = snapshot.messages || [];
-      const cursors = new Map();
-      const restored = messages.map((m) => ({ id: m.turn_id, question: m.text, subject: m.subject_id, events: [] }));
-      let running;
-      do {
-        running = false;
-        for (const run of new Set(messages.map((m) => m.run_id))) {
-          const info = await request("/api/v1/runs/" + run);
-          const replay = await request("/api/v1/runs/" + run + "/events?after_event_id=" + (cursors.get(run) ?? -1));
-          for (const e of replay.events) {
-            restored.find((t) => t.id === e.turn_id)?.events.push({ type: e.type, data: e });
-            cursors.set(run, e.event_id);
-          }
-          running ||= info.status === "running";
-        }
-        if (cancelled) return;
-        setChat((prev) => ({ ...prev, turns: restored.map((t) => ({...t, events: [...t.events]})) }));
-        if (running) await new Promise((resolve) => setTimeout(resolve, 500));
-      } while (running && !cancelled);
-      if (!cancelled) setSubjects((await request("/api/v1/sessions/" + session)).subjects);
-    }
-    setBusy(true);
-    recover().catch(() => { if (!cancelled) setStatus("暂时无法恢复服务端会话"); })
-      .finally(() => { if (!cancelled) setBusy(false); });
-    return () => { cancelled = true; };
-  }, []);
   const editor = useRef(null),
     sending = useRef(false);
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(
-        "pipe.chat",
-        JSON.stringify({
-          ...chat,
-          turns: chat.turns.map(({ fresh, ...turn }) => turn),
-        }),
+  const openSession = useRef(async () => {});
+  openSession.current = async (session) => {
+    const snapshot = await request("/api/v1/sessions/" + session);
+    rememberSession(session);
+    setChat({ session, turns: [], subject: snapshot.subject_id || "default" });
+    setSubjects(snapshot.subjects || {});
+    const messages = snapshot.messages || [];
+    const cursors = new Map();
+    const restored = messages.map((m) => ({
+      id: m.turn_id,
+      question: m.text,
+      subject: m.subject_id,
+      events: [],
+    }));
+    let running;
+    do {
+      running = false;
+      for (const run of new Set(messages.map((m) => m.run_id))) {
+        const info = await request("/api/v1/runs/" + run);
+        const replay = await request(
+          "/api/v1/runs/" + run + "/events?after_event_id=" + (cursors.get(run) ?? -1),
+        );
+        for (const e of replay.events) {
+          restored.find((t) => t.id === e.turn_id)?.events.push({ type: e.type, data: e });
+          cursors.set(run, e.event_id);
+        }
+        running ||= info.status === "running";
+      }
+      setChat((prev) =>
+        prev.session === session
+          ? {
+              ...prev,
+              subject: snapshot.subject_id || prev.subject,
+              turns: restored.map((t) => ({ ...t, events: [...t.events] })),
+            }
+          : prev,
       );
-    } catch {
-      sessionStorage.removeItem("pipe.chat");
-    }
-  }, [chat]);
+      if (running) await new Promise((resolve) => setTimeout(resolve, 500));
+    } while (running);
+  };
+  useEffect(() => {
+    if (offline) return;
+    let cancelled = false;
+    setBusy(true);
+    listSessions()
+      .then(async (rows) => {
+        if (cancelled) return;
+        setSessions(rows);
+        const saved = savedSession();
+        if (saved && rows.some((row) => row.session_id === saved)) {
+          try {
+            await openSession.current(saved);
+          } catch {
+            if (!cancelled) {
+              setStatus("暂时打不开");
+              setChat({ session: null, turns: [] });
+            }
+          }
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("暂时无法读取会话列表");
+      })
+      .finally(() => {
+        if (!cancelled) setBusy(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   function choose(i) {
     setInput(examples[i]);
     editor.current.focus();
@@ -362,11 +407,17 @@ export function Chat() {
           session = (await request("/api/v1/sessions", { method: "POST" }))
             .session_id;
           setChat((prev) => ({ ...prev, session }));
+          rememberSession(session);
         }
         if (await streamTurn(session, message, event, subject)) {
           const snapshot = await request("/api/v1/sessions/" + session);
           setSubjects(snapshot.subjects);
-          setStatus("");
+          try {
+            setSessions(await listSessions());
+            setStatus("");
+          } catch {
+            setStatus("暂时无法读取会话列表");
+          }
           return;
         }
         if (chat.session)
@@ -385,16 +436,206 @@ export function Chat() {
     }
   }
   function reset() {
+    showChat();
     setChat({ session: null, turns: [] });
+    rememberSession(null);
     setSubjects({});
     setStatus("");
     setInput("");
     editor.current.focus();
   }
+  function sessionLabel(item) {
+    return item.title || item.last_message;
+  }
+  function closeMenu() {
+    setMenu(null);
+    setPendingDelete(null);
+  }
+  function openMenu(event, sessionId) {
+    event.preventDefault();
+    if (busy) return;
+    const width = 148;
+    const height = sessionId ? 132 : 48;
+    setPendingDelete(null);
+    setMenu({
+      x: Math.max(8, Math.min(event.clientX, window.innerWidth - width - 8)),
+      y: Math.max(8, Math.min(event.clientY, window.innerHeight - height - 8)),
+      sessionId,
+    });
+  }
+  useEffect(() => {
+    if (!menu) return;
+    function close(event) {
+      if (event.target.closest?.(".session-menu")) return;
+      closeMenu();
+    }
+    function onKey(event) {
+      if (event.key === "Escape") closeMenu();
+    }
+    window.addEventListener("pointerdown", close);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointerdown", close);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [menu]);
+  async function saveTitle(event) {
+    event.preventDefault();
+    const title = draft.trim();
+    if (!title || busy) return;
+    const id = editing;
+    try {
+      const saved = await renameSession(id, title);
+      setSessions((rows) =>
+        rows.map((row) => (row.session_id === id ? { ...row, title: saved.title } : row)),
+      );
+      setEditing(null);
+      setMenu(null);
+      setStatus("");
+    } catch {
+      setStatus("暂时无法修改会话");
+    }
+  }
+  async function removeSession(id) {
+    if (busy) return;
+    if (pendingDelete !== id) {
+      setPendingDelete(id);
+      return;
+    }
+    try {
+      await deleteSession(id);
+      setSessions((rows) => rows.filter((row) => row.session_id !== id));
+      setPendingDelete(null);
+      setEditing(null);
+      setMenu(null);
+      setStatus("");
+      if (chat.session === id) reset();
+    } catch {
+      setStatus("暂时无法删除会话");
+    }
+  }
+  function showChat() {
+    if (location.hash !== "" && location.hash !== "#chat") location.hash = "chat";
+  }
+  async function chooseSession(session) {
+    showChat();
+    if (busy || session === chat.session) return;
+    setBusy(true);
+    try {
+      await openSession.current(session);
+      setStatus("");
+    } catch {
+      setStatus("暂时打不开");
+    } finally {
+      setBusy(false);
+    }
+  }
   const confirmed = Object.entries(subjects[subject]?.confirmed || {});
   const prompts = [0, 1, 4, 7];
+  const shown = more ? sessions : sessions.slice(0, 5);
+  const dock = document.getElementById("session-dock");
+  const history = (
+    <nav
+      className={more ? "session-list open" : "session-list"}
+      aria-label="最近会话"
+      onContextMenu={(event) => {
+        if (event.target.closest(".session-row, input, textarea")) return;
+        openMenu(event, null);
+      }}
+    >
+      <small>最近</small>
+      {sessions.length === 0 && <p className="history-empty">还没有历史会话</p>}
+      <div className="session-scroll">
+      {shown.map((item) => (
+        <div
+          className="session-row"
+          key={item.session_id}
+          onContextMenu={(event) => openMenu(event, item.session_id)}
+        >
+          {editing === item.session_id ? (
+            <form className="session-rename" onSubmit={saveTitle}>
+              <input
+                aria-label="会话名称"
+                value={draft}
+                maxLength={80}
+                autoFocus
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") setEditing(null);
+                }}
+              />
+              <button type="button" disabled={busy || !draft.trim()} onClick={saveTitle}>
+                保存
+              </button>
+            </form>
+          ) : (
+            <button
+              type="button"
+              className="recent-item"
+              aria-current={item.session_id === chat.session ? "true" : undefined}
+              disabled={busy}
+              onClick={() => chooseSession(item.session_id)}
+            >
+              <span className="session-title">{sessionLabel(item)}</span>
+              <time dateTime={item.last_activity_at}>{recentWhen(item.last_activity_at)}</time>
+            </button>
+          )}
+        </div>
+      ))}
+      </div>
+      {sessions.length > 5 && (
+        <button type="button" className="recent-more" onClick={() => setMore((open) => !open)}>
+          {more ? "收起" : "查看更多 (" + (sessions.length - 5) + ")"}
+        </button>
+      )}
+    </nav>
+  );
   return (
     <div className={chat.turns.length ? "ask talking" : "ask"}>
+      {dock && createPortal(history, dock)}
+      {menu && createPortal(
+        <div className="session-menu" role="menu" style={{ left: menu.x, top: menu.y }}>
+          <button
+            type="button"
+            role="menuitem"
+            disabled={busy}
+            onClick={() => {
+              closeMenu();
+              reset();
+            }}
+          >
+            新会话
+          </button>
+          {menu.sessionId && (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                disabled={busy}
+                onClick={() => {
+                  const item = sessions.find((row) => row.session_id === menu.sessionId);
+                  if (!item) return;
+                  setEditing(menu.sessionId);
+                  setDraft(sessionLabel(item));
+                  closeMenu();
+                }}
+              >
+                改名
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                className="danger"
+                disabled={busy}
+                onClick={() => removeSession(menu.sessionId)}
+              >
+                {pendingDelete === menu.sessionId ? "确认删除" : "删除"}
+              </button>
+            </>
+          )}
+        </div>,
+        document.body,
+      )}
       <div className="ask-col">
         {!chat.turns.length && (
           <div className="ask-hello">

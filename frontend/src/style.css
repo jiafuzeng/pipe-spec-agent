@@ -72,7 +72,7 @@ a {
 .shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 216px minmax(0, 1fr);
+  grid-template-columns: 248px minmax(0, 1fr);
 }
 .sidebar {
   background: var(--nav);
@@ -105,11 +105,41 @@ a {
   border: 2px solid #deebaa;
   border-radius: 50%;
 }
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
 .sidebar nav small {
   display: block;
   color: #aac2b1;
   margin: 18px 12px 7px;
   font-size: 12px;
+}
+.session-dock {
+  margin: 14px 0 0;
+  min-height: 0;
+}
+.session-dock:has(.open) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+}
+.session-scroll {
+  overflow: hidden;
+}
+.session-list.open {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+.session-list.open .session-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 .sidebar nav a {
   display: flex;
@@ -126,7 +156,7 @@ a {
   background: #dcebc5;
   font-weight: 700;
 }
-.sidebar nav span {
+.sidebar nav a span {
   font: 21px/1 monospace;
 }
 .sidebar footer {
@@ -453,6 +483,130 @@ select {
 .prompts button:hover {
   background: #efefef;
   color: #161616;
+}
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.history-find,
+.session-rename input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.session-rename {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+}
+.session-rename button {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.session-row {
+  min-width: 0;
+}
+.session-dock .session-list > small {
+  margin: 6px 8px 2px;
+  font-size: 10px;
+}
+.recent-item,
+.recent-more {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #dbe6dd;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.35;
+  text-align: left;
+}
+.recent-item[aria-current="true"] {
+  background: rgba(220, 235, 197, 0.18);
+  color: #fff;
+  border-radius: 7px;
+}
+.session-dock .recent-item time {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  color: #aac2b1;
+  font-size: 9px;
+}
+.recent-more {
+  color: #aac2b1;
+  font-size: 10px;
+}
+.recent-more {
+  padding-left: 10px;
+}
+.session-dock .session-title {
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+  font: inherit;
+}
+.session-dock .session-rename input {
+  background: transparent;
+  color: #f6f8ed;
+  border: 1px solid #49645a;
+  border-radius: 7px;
+  padding: 6px 8px;
+}
+.session-dock .session-rename button {
+  color: #dbe6dd;
+  background: transparent;
+  border-color: #49645a;
+}
+.session-menu {
+  position: fixed;
+  z-index: 30;
+  min-width: 132px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(22, 22, 22, 0.12);
+}
+.session-menu button {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 7px 10px;
+}
+.session-menu button:hover {
+  background: #f4f7f5;
+}
+.session-menu button.danger {
+  color: #9a3412;
+}
+.session-title {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.session-list time,
+.history-empty {
+  color: #8a8a8a;
+  font-size: 9px;
+}
+.session-dock .history-empty {
+  color: #aac2b1;
+  margin: 8px 12px;
+}
+.history-empty {
+  margin: 8px 0 0;
+}
+.session-list .recent-item[aria-current="true"] {
+  outline: none;
 }
 .thread-bar {
   display: flex;
@@ -818,7 +972,7 @@ label select {
     padding: 4px 8px;
     font-size: 13px;
   }
-  .sidebar nav span {
+  .sidebar nav a span {
     display: none;
   }
   main {
@@ -828,6 +982,9 @@ label select {
     margin: -18px -14px -40px;
     padding: 28px 16px 32px;
     min-height: auto;
+  }
+  .session-dock {
+    width: 100%;
   }
   .ask-hello {
     padding-top: 12px;

@@ -9,7 +9,7 @@ from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.agent.store import Store
-from app.agent.workflow import Turn, workflow
+from app.agent.workflow import MEMORY_LIMIT, MEMORY_NAMESPACE, Turn, get_graph, memory_view
 from app.integrations.mcp_client import fetch_artifact
 
 router = APIRouter()
@@ -18,6 +18,10 @@ router = APIRouter()
 class Message(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     subject_id: str = Field(default="default", min_length=1, max_length=128)
+
+
+class SessionTitle(BaseModel):
+    title: str = Field(min_length=1, max_length=80)
 
 
 def resumes_task(state, query):
@@ -83,10 +87,28 @@ class Execution:
                         version,
                         queue,
                         self.tool_client,
+                        session_id=sid,
                     )
+                    state["subject_id"] = subject
                     try:
-                        initial = self.store.restore(turn_id) if recovering else None
-                        await workflow.ainvoke(initial or {"query": query}, context=ctx)
+                        graph = get_graph()
+                        payload = (
+                            None
+                            if recovering
+                            else {
+                                "query": query,
+                                "resume_at": "plan",
+                                "active_subject_id": subject,
+                            }
+                        )
+                        if graph.checkpointer:
+                            await graph.ainvoke(
+                                payload,
+                                {"configurable": {"thread_id": sid}},
+                                context=ctx,
+                            )
+                        else:
+                            await graph.ainvoke(payload or {"query": query}, context=ctx)
                     except Exception:
                         import logging
 
@@ -120,11 +142,54 @@ async def create_session(request: Request):
     return service(request).store.create()
 
 
+@router.get("/api/v1/sessions")
+async def list_sessions(request: Request):
+    return service(request).store.list_sessions()
+
+
+@router.patch("/api/v1/sessions/{sid}")
+async def rename_session(sid: str, body: SessionTitle, request: Request):
+    renamed = service(request).store.rename(sid, body.title)
+    if not renamed:
+        raise HTTPException(404, "会话不存在")
+    return renamed
+
+
+@router.delete("/api/v1/sessions/{sid}")
+async def delete_session(sid: str, request: Request):
+    if not service(request).store.delete(sid):
+        raise HTTPException(404, "会话不存在")
+    return Response(status_code=204)
+
+
 @router.get("/api/v1/sessions/{sid}")
 async def get_session(sid: str, request: Request):
     session = service(request).store.session(sid)
     if not session:
         raise HTTPException(404, "会话不存在")
+    session["short_term"] = {
+        "active_subject_id": None,
+        "confirmed": [],
+        "pending": [],
+        "recent_values": [],
+    }
+    graph = get_graph()
+    if graph.checkpointer:
+        snap = await graph.aget_state({"configurable": {"thread_id": sid}})
+        values = snap.values or {}
+        session["short_term"] = {
+            "active_subject_id": values.get("active_subject_id"),
+            "confirmed": values.get("confirmed") or [],
+            "pending": values.get("pending") or [],
+            "recent_values": values.get("recent_values") or [],
+        }
+    memory_store = getattr(request.app.state, "memory_store", None)
+    found = (
+        await memory_store.asearch(MEMORY_NAMESPACE, limit=MEMORY_LIMIT)
+        if memory_store is not None
+        else []
+    )
+    session["long_term"] = [memory_view(item) for item in found]
     return session
 
 

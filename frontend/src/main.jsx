@@ -40,6 +40,7 @@ function App() {
           {nav("import", "＋")}
           {nav("ragEval", "▤")}
           {nav("agentEval","▤")}
+          <div id="session-dock" className="session-dock" />
         </nav>
         <footer>CJJ 181—2012</footer>
       </aside>

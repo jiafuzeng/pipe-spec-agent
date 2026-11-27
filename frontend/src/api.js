@@ -11,6 +11,20 @@ export const examples = [
 ];
 export const api = "/api/v1/knowledge";
 export const offline = location.protocol === "file:";
+export function listSessions() {
+  return request("/api/v1/sessions");
+}
+export function renameSession(id, title) {
+  return request("/api/v1/sessions/" + id, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title }),
+  });
+}
+export async function deleteSession(id) {
+  const response = await fetch("/api/v1/sessions/" + id, { method: "DELETE" });
+  if (!response.ok) throw new Error("删除失败（" + response.status + "）");
+}
 export async function request(path, options) {
   const response = await fetch(path, options);
   if (!response.ok) {
