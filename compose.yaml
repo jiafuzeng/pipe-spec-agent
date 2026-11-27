@@ -10,9 +10,9 @@ services:
     ports: ["127.0.0.1:8000:8000"]
     env_file: .env
     environment:
-      MCP_URL: http://mcp:8001/mcp
+      MCP_URL: ${MCP_URL:-http://mcp:8001/mcp}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-    volumes: [knowledge:/app/data/knowledge]
+    volumes: [knowledge:/app/data/knowledge, agent_state:/app/data/agent]
     # MCP is optional: backend starts and serves import/retrieval if mcp is down.
     healthcheck:
       test: ["CMD","python","-c","import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
@@ -20,15 +20,14 @@ services:
       timeout: 5s
       retries: 4
   mcp:
-    build: .
-    command: ["python","-m","pipe_assessment_mcp"]
-    env_file: .env
+    build: ./pipe_assessment_mcp
+    profiles: ["mcp"]
     environment:
       MCP_HOST: 0.0.0.0
       MCP_DATA_DIR: /app/data/mcp
-      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
     volumes: [mcp_data:/app/data/mcp]
     ports: ["127.0.0.1:8001:8001"]
 volumes:
   knowledge: {}
   mcp_data: {}
+  agent_state: {}

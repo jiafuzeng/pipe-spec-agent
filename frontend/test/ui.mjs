@@ -27,8 +27,8 @@ const chunks = [
   },
 ];
 window.fetch = async (url, opts = {}) => {
-  if (url.endsWith("/rag-eval?mode=hybrid")) return Response.json({detail:"暂无混合报告"}, {status:404});
-  if (url.endsWith("/rag-eval?mode=bm25")) return Response.json(JSON.parse(readFileSync("../ragEval/bm25_scores.json", "utf8")));
+  if (url.endsWith("/evaluations/rag?mode=hybrid")) return Response.json({detail:"暂无混合报告"}, {status:404});
+  if (url.endsWith("/evaluations/rag?mode=bm25")) return Response.json(JSON.parse(readFileSync("../ragEval/bm25_scores.json", "utf8")));
   if (url.endsWith("/limits"))
     return Response.json({
       chunk_strategies: [
@@ -50,8 +50,11 @@ window.fetch = async (url, opts = {}) => {
       { profile_id: "ollama:bge-m3", available: modelAvailable, dimension: 1024, health_status: "请检查 Ollama 服务" },
     ]);
   if (url === "/api/v1/sessions") return Response.json({ session_id: "trial" });
+  if (url === "/api/v1/sessions/trial") return Response.json({subjects: {}, messages: []});
   if (url.endsWith("/turns")) {
-    messages.push(JSON.parse(opts.body).message);
+    const body = JSON.parse(opts.body);
+    assert.equal(body.subject_id, "default");
+    messages.push(body.message);
     return new Response(
       'event: plan_step\ndata: {"text":"检索条款"}\n\nevent: answer\ndata: {"text":"测试回答"}\n\n',
     );
@@ -87,6 +90,7 @@ window.fetch = async (url, opts = {}) => {
   }
   if (url.includes("/chunks?")) return Response.json(chunks);
   if (url.includes("/approve?")) {
+    assert.equal(new URL(url, "http://localhost").searchParams.get("actor"), "test-reviewer");
     assert.ok(url.includes("confirmed=true"));
     approved = true;
     documents[0].state = "active_approved";
@@ -163,6 +167,18 @@ assert.match(doc.querySelector("main").textContent, /job1/);
 await tick();
 assert.match(doc.querySelector(".indexed").textContent, /test\.pdf/);
 window.confirm = () => true;
+const review = doc.querySelector(".indexed details");
+review.querySelector("button").click();
+await tick();
+assert.match(review.querySelector(".chunks").textContent, /测试条款/);
+const actor = review.querySelector("input");
+const inputSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value").set;
+inputSetter.call(actor, "test-reviewer");
+actor.dispatchEvent(new window.Event("input", { bubbles:true }));
+await tick();
+[...review.querySelectorAll("button")].find((b) => b.textContent.includes("确认审核")).click();
+await tick();
+assert.equal(approved, true);
 doc.querySelector(".indexed .danger").click();
 await tick();
 assert.match(doc.querySelector("main").textContent, /还没有可删除的向量/);

@@ -4,8 +4,8 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from rag.source import PDF_SHA, sections, configuration
-from rag.registry import Registry
+from app.knowledge.source import PDF_SHA, sections, configuration
+from app.knowledge.registry import Registry
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -15,7 +15,7 @@ class IngestionTests(unittest.TestCase):
         pdf = next((ROOT / "docs").glob("*.pdf"))
         self.assertEqual(hashlib.sha256(pdf.read_bytes()).hexdigest(), PDF_SHA)
         parsed = json.loads(
-            next((ROOT / "data/docmind").rglob("document.json")).read_bytes()
+            (ROOT / "data/document.json").read_bytes()
         )
         items = list(sections(parsed))
         self.assertEqual(items[0][1]["page_pdf"], 1)
@@ -25,7 +25,7 @@ class IngestionTests(unittest.TestCase):
         self.assertGreater(len(items), 500)
 
     def test_markdown_chunks_match_source_page(self):
-        from rag.pipeline import index_nodes
+        from app.rag.pipeline import index_nodes
 
         markdown = (ROOT / "data/document.md").read_text()
         parsed = json.loads((ROOT / "data/document.json").read_bytes())
@@ -78,8 +78,8 @@ class IngestionTests(unittest.TestCase):
 
         from llama_index.core.embeddings import MockEmbedding
 
-        from rag.pipeline import index_nodes
-        from rag.source import STRATEGIES
+        from app.rag.pipeline import index_nodes
+        from app.knowledge.source import STRATEGIES
 
         text = "\n\n".join(
             f"# 第{i}章\n\n这是第{i}句说明。下一句继续说明检测要求。最后一句给出结论。"
@@ -94,7 +94,7 @@ class IngestionTests(unittest.TestCase):
                     "embedding_profile_id": "ollama:bge-m3",
                 }
                 with patch(
-                    "rag.pipeline.model", return_value=MockEmbedding(embed_dim=8)
+                    "app.rag.pipeline.model", return_value=MockEmbedding(embed_dim=8)
                 ):
                     nodes = index_nodes(source, Path(tmp), meta)
                 self.assertGreater(len(nodes), 0, strategy)

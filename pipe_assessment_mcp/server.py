@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import base64
+import re
 import csv
 import hashlib
 import io
@@ -13,7 +13,8 @@ from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 from pipe_assessment_mcp import storage
-from rag.calculation import evaluate, missing_fields, result_id, rulebook
+from pipe_assessment_mcp.defects import InputError, resolve_inputs
+from pipe_assessment_mcp.domain import evaluate, missing_fields, result_id, rulebook
 
 load_dotenv()
 
@@ -40,8 +41,25 @@ async def health_check(request):  # noqa: ARG001
     )
 
 
+@server.custom_route("/artifacts/{resource_id}", methods=["GET"])
+async def artifact(request):
+    from starlette.responses import FileResponse, Response
+
+    resource_id = request.path_params["resource_id"]
+    if not re.fullmatch(r"[0-9a-f]{64}", resource_id):
+        return Response(status_code=404)
+    path = storage.artifact_path(resource_id)
+    return (
+        FileResponse(path, media_type="image/png")
+        if path.is_file()
+        else Response(status_code=404)
+    )
+
+
 @server.tool()
-def get_calculation_schema(calculation_type: str, rule_version: str | None = None) -> dict:
+def get_calculation_schema(
+    calculation_type: str, rule_version: str | None = None
+) -> dict:
     rule = rulebook(calculation_type, rule_version)
     if rule:
         return dict(
@@ -49,6 +67,18 @@ def get_calculation_schema(calculation_type: str, rule_version: str | None = Non
             status="approved",
             fields=rule["fields"],
             rule_version=rule["version"],
+            evidence=rule.get("evidence", []),
+            rule_mode="fixture" if rule.get("fixture_only") else "published",
+            alternate_inputs=(
+                {
+                    "grades": rule["paired_defect_rules"]["grades"],
+                    "soil_columns": list(rule["paired_defect_rules"]["soils"]),
+                }
+                if calculation_type == "RI"
+                and not rule.get("fixture_only")
+                and rule.get("paired_defect_rules")
+                else {}
+            ),
         )
     return dict(
         calculation_type=calculation_type,
@@ -76,6 +106,13 @@ def calculate_index(
     rule = rulebook(calculation_type, rule_version)
     if not rule or calculation_type not in {"RI", "MI"}:
         return {"error": "RULE_NOT_PUBLISHED"}
+    raw = parameters
+    try:
+        parameters, derivation = resolve_inputs(rule, raw, lookup_defect_score)
+    except InputError as exc:
+        return exc.payload
+    except (ValueError, TypeError):
+        return {"error": "INVALID_PARAMETER", "message": "原始参数格式不正确"}
     missing = missing_fields(rule["fields"], parameters)
     if missing:
         return {"error": "MISSING_PARAMETERS", "fields": missing}
@@ -83,7 +120,33 @@ def calculate_index(
         result = evaluate(rule, parameters)
     except ValueError as exc:
         return {"error": "INVALID_PARAMETER", "message": str(exc)}
-    result.update(calculation_type=calculation_type, rule_version=rule_version)
+    result.update(
+        calculation_type=calculation_type,
+        rule_version=rule_version,
+        input_hash=result_id(
+            {
+                "rule_version": rule_version,
+                "calculation_type": calculation_type,
+                "parameters": raw,
+            }
+        ),
+        source_parameters=raw,
+        parameter_trace=[
+            {
+                "name": f["name"],
+                "value": parameters[f["name"]],
+                "unit": f.get("unit"),
+                "evidence_refs": f.get("evidence_refs", []),
+            }
+            for f in rule["fields"]
+        ],
+        intermediate_steps=derivation
+        + [
+            {"parameter": name, "contribution": value}
+            for name, value in result["contributions"].items()
+        ],
+        recommendation=result["advice"],
+    )
     digest = result_id(result)
     conflict = storage.save_result(idempotency_key, digest, result)
     if conflict:
@@ -104,13 +167,19 @@ def plot_curve(
     independent = x_axis or axis
     if independent not in {"T", "K"} or not 2 <= len(result_ids) <= 100:
         return {"error": "INVALID_PARAMETER"}
+    if axis and x_axis and axis != x_axis:
+        return {"error": "INVALID_PARAMETER"}
     from matplotlib.figure import Figure
 
     rows = storage.load_results_by_digest(result_ids)
     if rows is None:
         return {"error": "RESULT_NOT_FOUND"}
     first = rows[0]
-    dependent = y_axis or first["calculation_type"]
+    dependent = first["calculation_type"]
+    if (rule_version and rule_version != first["rule_version"]) or (
+        y_axis and y_axis != dependent
+    ):
+        return {"error": "INCONSISTENT_POINTS"}
 
     def fixed(row):
         return (
@@ -138,7 +207,12 @@ def plot_curve(
             ensure_ascii=False,
         ).encode()
     ).hexdigest()
-    storage.artifact_path(resource_id).write_bytes(png_bytes)
+    import tempfile
+
+    path = storage.artifact_path(resource_id)
+    with tempfile.NamedTemporaryFile(dir=path.parent, delete=False) as temp:
+        temp.write(png_bytes)
+    os.replace(temp.name, path)
     output = io.StringIO()
     csv.writer(output).writerows([(independent, dependent), *points])
     payload = dict(
@@ -149,8 +223,6 @@ def plot_curve(
         y_axis=dependent,
         rule_version=rule_version or first.get("rule_version"),
         csv=output.getvalue(),
-        # Transition: clients may still read Base64 until Phase 2 artifacts URL lands.
-        png_base64=base64.b64encode(png_bytes).decode(),
     )
     if fixed_parameters_summary:
         payload["fixed_parameters_summary"] = fixed_parameters_summary

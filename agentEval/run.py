@@ -8,6 +8,8 @@ import os
 import re
 import sys
 from pathlib import Path
+from decimal import Decimal
+from tempfile import TemporaryDirectory
 
 ROOT = Path(__file__).resolve().parents[1]
 CASES = Path(__file__).resolve().parent / "agent_cases.json"
@@ -64,7 +66,9 @@ def infer_action(events: list[dict]) -> str:
         return "calculate_and_plot"
     if "clarification_required" in types:
         if any(e.get("type") == "evidence" for e in events) or any(
-            e.get("tool") == "search_clauses" for e in events if e.get("type") == "tool_call"
+            e.get("tool") == "search_clauses"
+            for e in events
+            if e.get("type") == "tool_call"
         ):
             return "clarify_then_explain"
         return "clarify"
@@ -115,7 +119,11 @@ def score_turn(expect: dict, events: list[dict], prior_run_id: str | None) -> li
             if e.get("type") == "tool_call" and e.get("tool") == "search_clauses":
                 if e.get("via") != "in_process":
                     failures.append("search_clauses must be in_process")
-            if e.get("type") == "tool_call" and e.get("tool") == "search_clauses" and e.get("via") == "mcp":
+            if (
+                e.get("type") == "tool_call"
+                and e.get("tool") == "search_clauses"
+                and e.get("via") == "mcp"
+            ):
                 failures.append("search via mcp")
 
     if expect.get("refusal_text"):
@@ -124,12 +132,14 @@ def score_turn(expect: dict, events: list[dict], prior_run_id: str | None) -> li
             failures.append("refusal_text missing")
 
     if expect.get("citations_any_of"):
-        blob = json.dumps(events, ensure_ascii=False)
-        if not any(c in blob for c in expect["citations_any_of"]):
+        clauses = {e.get("clause_no") for e in events if e.get("type") == "evidence"}
+        if not clauses.intersection(expect["citations_any_of"]):
             failures.append("citations_any_of not matched")
 
     if expect.get("missing_parameter_groups"):
-        clar = next((e for e in events if e.get("type") == "clarification_required"), {})
+        clar = next(
+            (e for e in events if e.get("type") == "clarification_required"), {}
+        )
         groups = clar.get("missing_parameter_groups") or clar.get("groups") or []
         blob = json.dumps(clar, ensure_ascii=False)
         for group in expect["missing_parameter_groups"]:
@@ -143,28 +153,58 @@ def score_turn(expect: dict, events: list[dict], prior_run_id: str | None) -> li
                 if any(tok in blob for tok in group.get("any_of") or []):
                     ok = True
             if not ok:
-                failures.append(f"missing_parameter_groups {group.get('id')} not covered")
+                failures.append(
+                    f"missing_parameter_groups {group.get('id')} not covered"
+                )
 
     if expect.get("missing_parameters"):
-        clar = next((e for e in events if e.get("type") == "clarification_required"), {})
+        clar = next(
+            (e for e in events if e.get("type") == "clarification_required"), {}
+        )
         blob = json.dumps(clar, ensure_ascii=False)
         for name in expect["missing_parameters"]:
             if name not in blob:
                 failures.append(f"missing_parameters {name} not in clarification")
 
     if expect.get("results"):
-        blob = json.dumps(events, ensure_ascii=False)
+        outputs = [
+            e["output"]
+            for e in events
+            if e.get("tool") == "calculate_index" and e.get("status") == "succeeded"
+        ]
         for row in expect["results"]:
-            for key, val in row.items():
-                if str(val) not in blob and f'"{key}": "{val}"' not in blob:
-                    # RI may appear as value field
-                    if key == "RI" and str(val) not in blob:
-                        failures.append(f"result {row} not found")
-                        break
+            if not any(
+                all(
+                    Decimal(
+                        str(
+                            out.get("value")
+                            if key == out.get("calculation_type")
+                            else out["parameters"].get(key)
+                        )
+                    )
+                    == Decimal(str(value))
+                    for key, value in row.items()
+                )
+                for out in outputs
+            ):
+                failures.append(f"result {row} not found")
 
     if expect.get("chart", {}).get("required"):
-        if not any(e.get("type") == "chart" for e in events):
-            failures.append("chart required")
+        charts = [e for e in events if e.get("type") == "chart"]
+        points = [
+            e["output"].get("points", [])
+            for e in events
+            if e.get("tool") == "plot_curve" and e.get("status") == "succeeded"
+        ]
+        if (
+            not charts
+            or not points
+            or (
+                expect["chart"].get("points")
+                and len(points[-1]) != expect["chart"]["points"]
+            )
+        ):
+            failures.append("chart or expected points missing")
 
     if expect.get("same_run_continues") and prior_run_id and events:
         if events[0].get("run_id") != prior_run_id:
@@ -190,6 +230,7 @@ def prepare_env(case: dict) -> dict:
     pre = case.get("precondition") or {}
     env = {}
     env["EVIDENCE_LLM_VERIFY"] = "0"
+    env["AGENT_MODEL_ENABLED"] = "0"
     env["MCP_INLINE"] = "1"
     if pre.get("fixture_rules") or pre.get("rules") == "approved":
         env["RULE_FIXTURE"] = "1"
@@ -197,7 +238,7 @@ def prepare_env(case: dict) -> dict:
         env["RULE_FIXTURE"] = "0"
     if pre.get("mcp") == "offline":
         env["MCP_URL"] = "offline"
-        env["MCP_INLINE"] = "1"  # retrieval still works; calc would be inline if asked
+        env["MCP_INLINE"] = "0"
     return env
 
 
@@ -221,16 +262,7 @@ def restore_env(previous: dict) -> None:
 
 
 def _smoke_search(query: str, top_k: int = 5) -> dict:
-    """Prefer real index; fall back to tiny stubs so CI smoke cases work without Chroma."""
-    from rag.registry import Registry, knowledge_root
-    from rag.search import search
-
-    root = knowledge_root()
-    registry = Registry(root)
-    if registry.active():
-        hits = search(root, registry, query, max(1, min(top_k, 20)))
-        if hits:
-            return {"evidence": hits}
+    """Controlled retrieval fixture for graph contract tests."""
     evidence = []
     if "1.0.1" in query or "编制目的" in query:
         evidence.append(
@@ -252,6 +284,15 @@ def _smoke_search(query: str, top_k: int = 5) -> dict:
                 "exact": True,
             }
         )
+    if "计算公式" in query:
+        evidence.append(
+            dict(
+                evidence_id="fixture-K",
+                clause_no="8.3.4",
+                quote="K——地区重要性参数，可按表 8.3.4-1 的规定确定；",
+                exact=True,
+            )
+        )
     return {"evidence": evidence}
 
 
@@ -260,10 +301,9 @@ def run_suite(suite: str = "ci") -> dict:
 
     from fastapi.testclient import TestClient
 
-    os.environ.setdefault("EVIDENCE_LLM_VERIFY", "0")
-    os.environ.setdefault("MCP_INLINE", "1")
-
-    from rag.web import app
+    from app.server.application import create_app
+    from app.agent.store import Store
+    from agentEval.fixture_tools import call_tool
 
     payload = json.loads(CASES.read_text(encoding="utf-8"))
     cases = payload["cases"]
@@ -272,7 +312,15 @@ def run_suite(suite: str = "ci") -> dict:
     elif suite != "all":
         cases = [c for c in cases if c["id"] == suite]
 
-    client = TestClient(app)
+    with TemporaryDirectory() as tmp, patch.dict(os.environ, {"MCP_DATA_DIR": tmp}):
+        app = create_app(store=Store(Path(tmp) / "agent.sqlite"), tool_client=call_tool)
+        with TestClient(app) as client:
+            return evaluate_cases(cases, client)
+
+
+def evaluate_cases(cases, client):
+    from unittest.mock import patch
+
     results = []
     action_ok = citation_ok = tool_ok = 0
     action_n = citation_n = tool_n = 0
@@ -290,7 +338,7 @@ def run_suite(suite: str = "ci") -> dict:
             continue
         prev = apply_env(prepare_env(case))
         try:
-            with patch("rag.dialogue.search_clauses", side_effect=_smoke_search):
+            with patch("app.agent.workflow.search_clauses", side_effect=_smoke_search):
                 sid = client.post("/api/v1/sessions").json()["session_id"]
                 turn_results = []
                 prior_run_id = None
@@ -300,8 +348,12 @@ def run_suite(suite: str = "ci") -> dict:
                     body = {"message": turn["message"], "subject_id": subject}
                     response = client.post(f"/api/v1/sessions/{sid}/turns", json=body)
                     events = parse_sse(response.text)
-                    failures = score_turn(turn.get("expect") or {}, events, prior_run_id)
-                    if (turn.get("expect") or {}).get("idempotent_retry_same_result_id"):
+                    failures = score_turn(
+                        turn.get("expect") or {}, events, prior_run_id
+                    )
+                    if (turn.get("expect") or {}).get(
+                        "idempotent_retry_same_result_id"
+                    ):
                         again = client.post(f"/api/v1/sessions/{sid}/turns", json=body)
                         events2 = parse_sse(again.text)
                         ids1 = [
@@ -321,11 +373,22 @@ def run_suite(suite: str = "ci") -> dict:
 
                     if events:
                         prior_run_id = events[0].get("run_id")
+                    versions = sorted(
+                        {
+                            e["output"]["rule_version"]
+                            for e in events
+                            if (e.get("output") or {}).get("rule_version")
+                        }
+                    )
                     ok = not failures
                     case_pass = case_pass and ok
                     turn_results.append(
                         {
                             "index": index,
+                            "rule_mode": "fixture"
+                            if os.getenv("RULE_FIXTURE") == "1"
+                            else "published",
+                            "rule_versions": versions,
                             "passed": ok,
                             "failures": failures,
                             "action": infer_action(events),
@@ -354,8 +417,9 @@ def run_suite(suite: str = "ci") -> dict:
     passed = len([r for r in results if r.get("passed") and not r.get("skipped")])
     report = {
         "mode": "inline_mcp",
-        "agent_entry": "rag.web:app / rag.dialogue",
-        "rule_mode": "fixture_when_requested",
+        "retrieval_mode": "fixture",
+        "agent_entry": "main:app / app.agent.workflow",
+        "rule_mode": "per_turn",
         "summary": {
             "total": total,
             "passed": passed,
@@ -365,12 +429,16 @@ def run_suite(suite: str = "ci") -> dict:
         },
         "results": results,
     }
-    REPORT.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    REPORT.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     return report
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Run agentEval cases against Web entry")
+    parser = argparse.ArgumentParser(
+        description="Run agentEval cases against Web entry"
+    )
     parser.add_argument("--suite", default="ci", help="ci | all | case id")
     parser.add_argument("--output", default=str(REPORT))
     args = parser.parse_args(argv)

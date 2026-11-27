@@ -5,8 +5,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from pipe_assessment_mcp.validate_rules import validate_package
-from rag.calculation import rulebook
-from rag.source import PDF_SHA
+from pipe_assessment_mcp.domain import rulebook
+from app.knowledge.source import PDF_SHA
 
 
 class ValidateRulesTests(unittest.TestCase):

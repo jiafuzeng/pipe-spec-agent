@@ -12,7 +12,7 @@ def manifest(root):
     sha = hashlib.sha256(pdf.read_bytes()).hexdigest()
     if sha != PDF_SHA:
         raise ValueError("源 PDF 与基线不匹配")
-    parsed = root / "data/docmind/cjj-181-2012/document.json"
+    parsed = root / "data/document.json"
     blocks = json.loads(parsed.read_bytes())
     pages = {}
     for text, meta in sections(blocks):

@@ -7,15 +7,17 @@ import json
 import sys
 from pathlib import Path
 
-from rag.calculation import evaluate, numeric
-from rag.source import PDF_SHA
+from pipe_assessment_mcp.domain import evaluate, numeric
+from pipe_assessment_mcp.domain import PDF_SHA
 
 ROOT = Path(__file__).resolve().parent
 
 
 def _case_value_grade(case: dict):
     expected = case.get("expected") or {}
-    value = case.get("value", expected.get("RI") or expected.get("MI") or expected.get("value"))
+    value = case.get(
+        "value", expected.get("RI") or expected.get("MI") or expected.get("value")
+    )
     grade = case.get("grade", expected.get("grade"))
     return value, grade
 
@@ -48,8 +50,14 @@ def validate_package(path: Path) -> list[str]:
             errors.append("RI/MI 缺少 fields")
         for field in fields:
             if field.get("minimum") is None or field.get("maximum") is None:
-                errors.append(f"字段 {field.get('name')} 的 minimum/maximum 不能为 null")
-        if not rule.get("formula") or not rule.get("coefficients") or not rule.get("bands"):
+                errors.append(
+                    f"字段 {field.get('name')} 的 minimum/maximum 不能为 null"
+                )
+        if (
+            not rule.get("formula")
+            or not rule.get("coefficients")
+            or not rule.get("bands")
+        ):
             errors.append("RI/MI 需要 formula、coefficients、bands")
         cases = rule.get("reference_cases") or []
         if len(cases) < 2:
@@ -58,7 +66,10 @@ def validate_package(path: Path) -> list[str]:
             try:
                 value, grade = _case_value_grade(case)
                 result = evaluate(rule, case["parameters"])
-                if numeric(result["value"]) != numeric(value) or result["grade"] != grade:
+                if (
+                    numeric(result["value"]) != numeric(value)
+                    or result["grade"] != grade
+                ):
                     errors.append(
                         f"reference_cases[{i}] 复算不一致: got {result['value']}/{result['grade']} "
                         f"expected {value}/{grade}"
@@ -72,6 +83,29 @@ def validate_package(path: Path) -> list[str]:
     else:
         errors.append("无法识别规则类型（文件名或内容需为 RI/MI/defect_score）")
 
+    policy = rule.get("paired_defect_rules")
+    if policy is not None:
+        try:
+            from pipe_assessment_mcp.defects import derive_pair, resolve_inputs
+
+            if kind != "RI" or not all(
+                policy.get(k)
+                for k in ("grades", "diameters", "soils", "evidence", "reference_cases")
+            ):
+                raise ValueError("双缺陷规则缺少映射表、出处或参考算例")
+            for example in policy["reference_cases"]:
+                derived = derive_pair(example["scores"], example["gap_m"], policy)
+                mapped, _ = resolve_inputs(
+                    rule, {"F": derived["F"], "D": example["D"]}, None
+                )
+                expected = example["expected"]
+                if derived["group"] != expected["group"] or any(
+                    numeric((derived | mapped)[k]) != numeric(expected[k])
+                    for k in ("S", "Smax", "F", "E")
+                ):
+                    raise ValueError("双缺陷与管径映射参考算例不一致")
+        except (KeyError, ValueError, TypeError) as exc:
+            errors.append(f"paired_defect_rules 校验失败: {exc}")
     return errors
 
 

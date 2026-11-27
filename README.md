@@ -9,7 +9,8 @@
 ```sh
 python3.11 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
-.venv/bin/python -m pipe_assessment_mcp
+.venv/bin/python -m pip install -e ./pipe_assessment_mcp
+.venv/bin/pipe-assessment-mcp
 ```
 
 计算 MCP 独立进程：只提供 Schema / 查分 / RI·MI / 绘图，**不含**条文检索。检索在 API 进程内完成；MCP 离线时导入与条文问答仍可用。
@@ -17,7 +18,7 @@ python3.11 -m venv .venv
 另开两个终端，分别运行 API 和前端：
 
 ```sh
-.venv/bin/uvicorn rag.web:app --port 8000 --workers 1
+.venv/bin/uvicorn main:app --port 8000 --workers 1
 ```
 
 ```sh
@@ -30,13 +31,13 @@ npm run dev
 
 在 Cursor 的「运行和调试」里选择「启动工作台」，会按上面三个进程一起启动，并在前端就绪后打开浏览器。单独调试时可分别选择 MCP、API 或前端。
 
-容器入口为 `docker compose up --build`，Compose 从项目 .env 读取配置；容器里同样打开 http://127.0.0.1:5173，API 映射在 8000。
+容器入口为 `docker compose --profile mcp up --build`，Compose 从项目 .env 读取配置；容器里同样打开 http://127.0.0.1:5173，API 映射在 8000。
 
-- Embedding 使用 `OLLAMA_BASE_URL` 上的 bge-m3，请求为 `POST /api/embed`，正文是 `{"model":"bge-m3","input":"..."}`。当前地址是 http://192.168.1.100:11434。OLLAMA_MODEL_VERSION 记录模型版本。DashScope 使用 DASHSCOPE_API_KEY 和 DASHSCOPE_MODEL_VERSION。
+- Embedding 使用 `OLLAMA_BASE_URL` 上的 bge-m3，请求为 `POST /api/embed`，正文是 `{"model":"bge-m3","input":"..."}`。OLLAMA_MODEL_VERSION 记录模型版本。DashScope 使用 DASHSCOPE_API_KEY 和 DASHSCOPE_MODEL_VERSION。
 - 远程重排在后端 .env 配置 RERANKER_BASE_URL、RERANKER_MODEL=qwen3-rerank 和 RERANKER_API_KEY，使用 POST /rerank。未指定远程地址时，RERANKER_MODEL 支持本地 CrossEncoder。证据筛选使用 CHAT_BASE_URL（含 /v1）、CHAT_MODEL=qwen3.8-flash、CHAT_API_KEY。两个进程从 .env 或服务端环境变量读取配置。
-- 导入演示选择 docs 下的 PDF。页面只上传原文；没有现成解析结果时，后端调用 DocMind，因此 PDF 直传需要服务凭证。
+- 导入演示选择 docs 下的 PDF。可在页面关联已有 DocMind JSON/Markdown。本地标准 PDF 会按 SHA 复用仓库样本，其他 PDF 缺少解析产物时调用 DocMind。
 - 查看机制和验收接口可访问 http://127.0.0.1:8000/docs。未审核索引不可用于问答。没有证据时走固定拒答，依赖服务失败时单独报告错误。
-- KNOWLEDGE_DIR 默认 data/knowledge。停止 API 与 MCP 后整体备份或恢复该目录，包括原文、解析产物、SQLite、Chroma。中断的构建在 API 重启时标为失败，可重新提交原始输入。当前采用单 API worker，本地演示会话保存在内存。
+- KNOWLEDGE_DIR 默认 data/knowledge。停止 API 与 MCP 后整体备份或恢复该目录，包括原文、解析产物、SQLite、Chroma。中断的构建在 API 重启时标为失败，可重新提交原始输入。API 使用单 worker。会话、管段、已确认参数、工具步骤和事件保存在 AGENT_DB（默认 data/agent/app.sqlite）。重启后继续待追问任务，重放中断回合时复用计算幂等键。
 - 页面为单机演示管理员设计，审核与删除入口仅应绑定本机或通过受控入口访问。
 
 ## 前端
@@ -57,7 +58,7 @@ npm test
 npm run build
 ```
 
-构建产物在 `frontend/dist`，由前端容器的 nginx 提供，并把 `/api` 转到 API。会话记录保存在当前标签页，服务重启后重新创建会话并提示上下文变化。
+构建产物在 `frontend/dist`，由前端容器的 nginx 提供，并把 `/api` 转到 API。浏览器保存会话标识，刷新后从 API 恢复消息与事件。
 
 ## 验证
 
@@ -70,4 +71,12 @@ manifest 输出原文和解析产物哈希、52 页 DocMind 来源清单、章�
 
 ## 尚待验收
 
-未发布 RI/MI 或缺陷分值规则，Web 对计算请求返回核验状态。指数计算器能按已批准字段、权重和分档处理已确认因子；原始缺陷到分项系数的全链路、九题真实答卷、方案比较、真实规则曲线与现场截图仍待完成。文档审核由演示管理员逐项核对，排序阈值与模型选择还需人工标注集评测。
+未发布 RI/MI 或缺陷分值规则，Web 对计算请求返回核验状态。指数计算器能按已批准字段、权重和分档处理已确认因子；题 9 双缺陷推导的正式包验收、九题现场答卷、真实规则曲线与现场截图仍待完成。文档审核由演示管理员逐项核对，排序阈值与模型选择还需人工标注集评测。
+
+## 工程入口与验证
+
+HTTP 路由位于 `app/server/routes/`，对话执行图位于 `app/agent/workflow.py`，管段状态与事件存储位于 `app/agent/store.py`。知识库注册与文档来源位于 `app/knowledge/`，切片、召回和重排位于 `app/rag/`。后端通过 `app/integrations/mcp_client.py` 调用独立计算服务、代读图表。
+
+单独部署 MCP 可在其目录执行 `pip install .` 后运行 `pipe-assessment-mcp`，或用该目录作为 Docker 构建上下文。外部计算服务的地址通过后端 `MCP_URL` 指定。只启动问答应用和前端时执行 `docker compose up --build`。备份时还需保存 Agent 的 SQLite 文件和 MCP 自己的结果、图表目录。
+
+执行 `.venv/bin/python -m agentEval --suite all` 验证共同执行入口。评测使用受控条款和临时数据库。每轮报告列出规则来源和版本，可通过 `GET /api/v1/evaluations/agent` 读取。生产计算仍依赖经双人审核的规则包。设置 `AGENT_MODEL_ENABLED=0` 可禁用模型辅助意图和槽位抽取，证据复核单独由 `EVIDENCE_LLM_VERIFY` 控制。

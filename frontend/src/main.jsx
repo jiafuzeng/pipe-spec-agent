@@ -3,8 +3,9 @@ import { createRoot } from "react-dom/client";
 import { Chat } from "./Chat.jsx";
 import { ImportPage } from "./Knowledge.jsx";
 import { RagEval } from "./RagEval.jsx";
+import { AgentEval } from "./AgentEval.jsx";
 import "./style.css";
-const pages = { chat: "规程问答", import: "导入文档", ragEval: "RAG 评测" };
+const pages = { chat: "规程问答", import: "导入文档", ragEval: "RAG 评测", agentEval:"Agent 评测" };
 function activePage() {
   return Object.hasOwn(pages, location.hash.slice(1))
     ? location.hash.slice(1)
@@ -38,6 +39,7 @@ function App() {
           <small>知识库</small>
           {nav("import", "＋")}
           {nav("ragEval", "▤")}
+          {nav("agentEval","▤")}
         </nav>
         <footer>CJJ 181—2012</footer>
       </aside>
@@ -49,6 +51,7 @@ function App() {
           <ImportPage />
         </div>
         {page === "ragEval" && <RagEval />}
+        {page === "agentEval" && <AgentEval />}
       </main>
     </div>
   );

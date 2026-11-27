@@ -1,15 +1,15 @@
 # agentEval
 
-按 `specs/05-testing/agent-eval-tdd.md` 做 Agent 层 TDD。执行器调用与 Web 相同的 `rag.web:app` 入口。
+按 `specs/05-testing/agent-eval-tdd.md` 做 Agent 层 TDD。执行器调用与 Web 相同的 `main:app` 入口。
 
 ## 命令
 
 ```bash
 # CI：ci=true 用例（默认进程内 MCP + 必要时 RULE_FIXTURE）
-MCP_INLINE=1 EVIDENCE_LLM_VERIFY=0 .venv/bin/python -m agentEval.run --suite ci
+.venv/bin/python -m agentEval.run --suite ci
 
 # 全部（含非 CI；题 9 等 blocked 会 skip）
-MCP_INLINE=1 RULE_FIXTURE=1 .venv/bin/python -m agentEval.run --suite all
+.venv/bin/python -m agentEval.run --suite all
 ```
 
 报告写到 `agentEval/last_report.json`，也可通过 `GET /api/v1/evaluations/agent` 读取。

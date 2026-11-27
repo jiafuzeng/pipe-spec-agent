@@ -116,16 +116,18 @@ function Turn({ turn, send, disabled }) {
             </div>
           );
         if (type === "chart") {
+          const metadata = trace.find((e) => e.data.tool === "plot_curve" && e.data.output?.resource_id === data.resource_id)?.data.output || data;
+          const imageUrl = "/api/v1/artifacts/" + data.resource_id;
           const [axis, metric] = (
-            data.csv?.split(/\r?\n/)[0] || "自变量,指数"
+            metadata.csv?.split(/\r?\n/)[0] || "自变量,指数"
           ).split(",");
           const pointCall = trace.find(
-            (e) => e.data.output?.result_id === data.result_ids?.[0],
+            (e) => e.data.output?.result_id === metadata.result_ids?.[0],
           )?.data;
           return (
             <figure key={i}>
               <img
-                src={"data:image/png;base64," + data.png_base64}
+                src={imageUrl}
                 alt={metric + " 随 " + axis + " 变化的曲线"}
               />
               <figcaption>
@@ -147,7 +149,7 @@ function Turn({ turn, send, disabled }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.points.map(([x, y], j) => (
+                  {(metadata.points || []).map(([x, y], j) => (
                     <tr key={j}>
                       <td>{x}</td>
                       <td>{y}</td>
@@ -157,7 +159,7 @@ function Turn({ turn, send, disabled }) {
               </table>
               <a
                 download="curve.png"
-                href={"data:image/png;base64," + data.png_base64}
+                href={imageUrl}
               >
                 下载 PNG
               </a>
@@ -165,7 +167,7 @@ function Turn({ turn, send, disabled }) {
               <a
                 download="curve.csv"
                 href={
-                  "data:text/csv;charset=utf-8," + encodeURIComponent(data.csv)
+                  "data:text/csv;charset=utf-8," + encodeURIComponent(metadata.csv || "")
                 }
               >
                 下载 CSV
@@ -219,7 +221,45 @@ function restore() {
 export function Chat() {
   const [chat, setChat] = useState(restore),
     [input, setInput] = useState(""),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [subjects, setSubjects] = useState({}),
+    [status, setStatus] = useState("");
+  const subject = chat.subject || "default";
+  const initialSession = useRef(chat.session);
+  useEffect(() => {
+    const session = initialSession.current;
+    if (!session || offline) return;
+    let cancelled = false;
+    async function recover() {
+      const snapshot = await request("/api/v1/sessions/" + session);
+      if (cancelled) return;
+      setSubjects(snapshot.subjects);
+      const messages = snapshot.messages || [];
+      const cursors = new Map();
+      const restored = messages.map((m) => ({ id: m.turn_id, question: m.text, subject: m.subject_id, events: [] }));
+      let running;
+      do {
+        running = false;
+        for (const run of new Set(messages.map((m) => m.run_id))) {
+          const info = await request("/api/v1/runs/" + run);
+          const replay = await request("/api/v1/runs/" + run + "/events?after_event_id=" + (cursors.get(run) ?? -1));
+          for (const e of replay.events) {
+            restored.find((t) => t.id === e.turn_id)?.events.push({ type: e.type, data: e });
+            cursors.set(run, e.event_id);
+          }
+          running ||= info.status === "running";
+        }
+        if (cancelled) return;
+        setChat((prev) => ({ ...prev, turns: restored.map((t) => ({...t, events: [...t.events]})) }));
+        if (running) await new Promise((resolve) => setTimeout(resolve, 500));
+      } while (running && !cancelled);
+      if (!cancelled) setSubjects((await request("/api/v1/sessions/" + session)).subjects);
+    }
+    setBusy(true);
+    recover().catch(() => { if (!cancelled) setStatus("暂时无法恢复服务端会话"); })
+      .finally(() => { if (!cancelled) setBusy(false); });
+    return () => { cancelled = true; };
+  }, []);
   const editor = useRef(null),
     sending = useRef(false);
   useEffect(() => {
@@ -235,7 +275,7 @@ export function Chat() {
   }
   async function send(message) {
     message = message.trim();
-    if (!message || sending.current || offline) return;
+    if (!message || busy || sending.current || offline) return;
     sending.current = true;
     setBusy(true);
     const id = crypto.randomUUID();
@@ -249,7 +289,7 @@ export function Chat() {
       }));
     setChat((prev) => ({
       ...prev,
-      turns: [...prev.turns, { id, question: message, events: [] }],
+      turns: [...prev.turns, { id, question: message, subject, events: [] }],
     }));
     setInput("");
     try {
@@ -259,7 +299,12 @@ export function Chat() {
             .session_id;
           setChat((prev) => ({ ...prev, session }));
         }
-        if (await streamTurn(session, message, event)) return;
+        if (await streamTurn(session, message, event, subject)) {
+          const snapshot = await request("/api/v1/sessions/" + session);
+          setSubjects(snapshot.subjects);
+          setStatus("");
+          return;
+        }
         if (chat.session)
           event({
             type: "error",
@@ -286,6 +331,8 @@ export function Chat() {
           disabled={busy}
           onClick={() => {
             setChat({ session: null, turns: [] });
+            setSubjects({});
+            setStatus("");
             setInput("");
             editor.current.focus();
           }}
@@ -345,17 +392,26 @@ export function Chat() {
             </div>
           </form>
           <div aria-live="polite">
-            {[...chat.turns].reverse().map((t, i) => (
+            {[...chat.turns].reverse().map((t) => (
               <Turn
                 key={t.id}
                 turn={t}
                 send={send}
-                disabled={busy || offline || i > 0}
+                disabled={busy || offline || (t.subject || "default") !== subject || chat.turns.slice(chat.turns.indexOf(t) + 1).some((next) => (next.subject || "default") === subject)}
               />
             ))}
           </div>
         </div>
         <aside className="panel examples">
+          <label>当前管段 <input aria-label="当前管段" maxLength={128} disabled={busy}
+            value={chat.subject ?? "default"} list="pipe-subjects"
+            onChange={(e) => setChat((prev) => ({...prev, subject: e.target.value}))} /></label>
+          <datalist id="pipe-subjects">{Object.keys(subjects).map((id) => <option key={id} value={id} />)}</datalist>
+          <h4>已确认参数</h4>
+          {Object.entries(subjects[subject]?.confirmed || {}).map(([kind, slots]) =>
+            <p key={kind}>{kind} · {Object.entries(slots).map(([k,v]) => k + "=" + v).join("，")}</p>)}
+          {!Object.keys(subjects[subject]?.confirmed || {}).length && <p>暂无已确认参数</p>}
+          {status && <p role="status">{status}</p>}
           <h3>示例题库</h3>
           {names.map((name, i) => (
             <button onClick={() => choose(i)} key={name}>

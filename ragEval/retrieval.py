@@ -16,8 +16,8 @@ from rank_bm25 import BM25Okapi
 if __name__ == "__main__" and not __package__:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from rag.registry import Registry, knowledge_root
-from rag.search import citation_spans, lexical_query_terms, search, search_indexes, terms
+from app.knowledge.registry import Registry, knowledge_root
+from app.rag.retrieval import citation_spans, lexical_query_terms, search, search_indexes, terms
 
 
 def compact(value):
@@ -46,7 +46,7 @@ def offline_retriever(root, job, hashes):
 
     def retrieve(query):
         scores = index.get_scores(lexical_query_terms(query))
-        # Mirror the lexical candidate cutoff and missing-clause filter in rag.search.
+        # Mirror the lexical candidate cutoff and missing-clause filter in app.rag.retrieval.
         ordered = sorted(range(len(scores)), key=scores.__getitem__, reverse=True)[:20]
         return [corpus[i] for i in ordered if corpus[i]["clause_no"]][:5]
 

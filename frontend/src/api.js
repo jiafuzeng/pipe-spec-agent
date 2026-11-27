@@ -23,11 +23,11 @@ export async function request(path, options) {
   }
   return response.json();
 }
-export async function streamTurn(session, message, onEvent) {
+export async function streamTurn(session, message, onEvent, subject = "default") {
   const res = await fetch("/api/v1/sessions/" + session + "/turns", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, subject_id: subject }),
   });
   if (res.status === 404) return false;
   if (!res.ok) throw new Error("问答请求失败（" + res.status + "）");

@@ -1,6 +1,6 @@
 import unittest
 from decimal import Decimal
-from rag.calculation import evaluate, missing_fields
+from pipe_assessment_mcp.domain import evaluate, missing_fields
 
 
 class CalculationTests(unittest.TestCase):
@@ -32,7 +32,7 @@ class CalculationTests(unittest.TestCase):
 
     def test_cal08_no_published_rules_without_fixture(self):
         import os
-        from rag.calculation import rulebook
+        from pipe_assessment_mcp.domain import rulebook
 
         os.environ.pop("RULE_FIXTURE", None)
         for kind in ("RI", "MI", "defect_score"):
@@ -40,7 +40,7 @@ class CalculationTests(unittest.TestCase):
 
     def test_fixture_ri_loads_only_with_flag(self):
         import os
-        from rag.calculation import rulebook
+        from pipe_assessment_mcp.domain import rulebook
 
         os.environ.pop("RULE_FIXTURE", None)
         self.assertIsNone(rulebook("RI"))

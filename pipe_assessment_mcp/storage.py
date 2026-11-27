@@ -4,6 +4,7 @@ import json
 import os
 import sqlite3
 from pathlib import Path
+from contextlib import contextmanager
 
 
 def data_root() -> Path:
@@ -17,7 +18,8 @@ def data_root() -> Path:
     return path
 
 
-def connect() -> sqlite3.Connection:
+@contextmanager
+def connect():
     root = data_root()
     db = sqlite3.connect(root / "results.sqlite", check_same_thread=False)
     db.execute(
@@ -25,7 +27,11 @@ def connect() -> sqlite3.Connection:
         "request TEXT PRIMARY KEY, digest TEXT NOT NULL, body TEXT NOT NULL)"
     )
     db.commit()
-    return db
+    try:
+        with db:
+            yield db
+    finally:
+        db.close()
 
 
 def save_result(idempotency_key: str, digest: str, body: dict) -> str | None:

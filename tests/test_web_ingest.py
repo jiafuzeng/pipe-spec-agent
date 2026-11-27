@@ -10,9 +10,10 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from llama_index.core.embeddings import MockEmbedding
 
-from rag import web
-from rag.pipeline import client
-from rag.registry import Registry
+from main import app
+from app.server.routes import knowledge as web
+from app.rag.pipeline import client
+from app.knowledge.registry import Registry
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -20,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 class WebIngestionTests(unittest.TestCase):
     def test_pdf_preview_build_restart_and_approve(self):
         pdf = next((ROOT / "docs").glob("*.pdf"))
-        layouts = next((ROOT / "data/docmind").rglob("document.json"))
+        layouts = (ROOT / "data/document.json")
         files = {
             "source_file": (pdf.name, pdf.read_bytes()),
             "docmind_json": ("document.json", layouts.read_bytes()),
@@ -31,9 +32,9 @@ class WebIngestionTests(unittest.TestCase):
             patch.object(web, "ROOT", Path(tmp)),
             patch.object(web, "db", Registry(Path(tmp))),
             patch.object(web, "model", return_value=embed) as probe,
-            patch("rag.pipeline.model", return_value=embed),
+            patch("app.rag.pipeline.model", return_value=embed),
         ):
-            api = TestClient(web.app)
+            api = TestClient(app)
             prefix = web.API
             preview = api.post(prefix + "/imports/preview", files=files)
             self.assertEqual(preview.status_code, 200, preview.text[:500])
@@ -63,11 +64,11 @@ class WebIngestionTests(unittest.TestCase):
             )
             self.assertEqual(response.status_code, 200, response.text)
             self.assertEqual(restored.active()[0]["id"], job)
-            from rag.search import search
+            from app.rag.retrieval import search
 
             with (
-                patch("rag.search.model", return_value=embed),
-                patch("rag.search.reranker") as rank,
+                patch("app.rag.retrieval.model", return_value=embed),
+                patch("app.rag.retrieval.reranker") as rank,
             ):
                 rank.return_value.predict.side_effect = lambda pairs: [0.5] * len(pairs)
                 hits = search(Path(tmp), restored, "第1.0.1条")
@@ -112,12 +113,13 @@ class WebIngestionTests(unittest.TestCase):
             patch.object(web, "ROOT", Path(tmp)),
             patch.object(web, "db", Registry(Path(tmp))),
             patch.object(web, "model", return_value=embed),
+            patch.object(web, "bundled_layouts", return_value=None),
             patch.dict(
                 sys.modules, {"docmind_parse": SimpleNamespace(parse_document=parser)}
             ),
         ):
-            api = TestClient(web.app)
-            with patch("rag.pipeline.model", return_value=embed):
+            api = TestClient(app)
+            with patch("app.rag.pipeline.model", return_value=embed):
                 job = api.post(web.API + "/imports", files=files).json()["job_id"]
             parser.assert_called_once()
             row = web.job_info(job)
@@ -133,7 +135,7 @@ class WebIngestionTests(unittest.TestCase):
             )
             web.approve(row["source"], job, "test", True)
             with patch(
-                "rag.pipeline.model", side_effect=RuntimeError("private provider error")
+                "app.rag.pipeline.model", side_effect=RuntimeError("private provider error")
             ):
                 other = api.post(
                     web.API + "/imports", files=files, data={"chunking.chunk_size": 768}

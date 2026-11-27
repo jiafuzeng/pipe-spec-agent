@@ -5,8 +5,8 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from rag.pipeline import client
-from rag.registry import Registry
+from app.rag.pipeline import client
+from app.knowledge.registry import Registry
 from rag.web import API, app
 
 
@@ -53,7 +53,7 @@ class ApiSplitTests(unittest.TestCase):
         self.assertEqual(preflight.headers["access-control-allow-origin"], origin)
 
     def test_delete_removes_only_the_selected_file(self):
-        from rag import web
+        from app.server.routes import knowledge as web
 
         with TemporaryDirectory() as tmp:
             root = Path(tmp)

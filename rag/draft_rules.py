@@ -14,13 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def candidate_rules(root):
-    blocks = list(
-        sections(
-            json.loads(
-                next((root / "data/docmind").rglob("document.json")).read_bytes()
-            )
-        )
-    )
+    blocks = list(sections(json.loads((root / "data/document.json").read_bytes())))
 
     def evidence(refs):
         return [
@@ -116,6 +110,74 @@ def candidate_rules(root):
             kind,
             base
             | dict(
+                **(
+                    {
+                        "paired_defect_rules": {
+                            "overlap_m": "1",
+                            "near_m": "1.5",
+                            "near_weight": "1.1",
+                            "score_cap": "10",
+                            "low_f": "4",
+                            "low_f_E": "0",
+                            "grades": {"轻度": 1, "中度": 2, "重度": 3, "重大": 4},
+                            "diameters": [
+                                {"upper": "600", "E": "0"},
+                                {
+                                    "lower": "600",
+                                    "include_lower": True,
+                                    "upper": "1000",
+                                    "include_upper": True,
+                                    "E": "3",
+                                },
+                                {
+                                    "lower": "1000",
+                                    "upper": "1500",
+                                    "include_upper": True,
+                                    "E": "6",
+                                },
+                                {"lower": "1500", "E": "10"},
+                            ],
+                            "soils": {
+                                "一般土层": "0",
+                                "粉砂层": "10",
+                                "湿陷性黄土Ⅳ级": "10",
+                                "湿陷性黄土Ⅲ级": "8",
+                                "湿陷性黄土Ⅰ、Ⅱ级": "6",
+                                "强膨胀土": "10",
+                                "中膨胀土": "8",
+                                "弱膨胀土": "6",
+                                "淤泥": "10",
+                                "淤泥质土": "8",
+                                "红黏土": "8",
+                            },
+                            "evidence": [
+                                "8.1.3",
+                                "8.1.4",
+                                "8.3.1",
+                                "8.3.2",
+                                "表8.2.3",
+                                "表8.3.4-2",
+                                "表8.3.4-3",
+                            ],
+                            "reference_cases": [
+                                {
+                                    "scores": ["5", "5"],
+                                    "gap_m": "1.2",
+                                    "D": "1200",
+                                    "expected": {
+                                        "S": "5.5",
+                                        "Smax": "5",
+                                        "F": "5.5",
+                                        "E": "6",
+                                        "group": "n2",
+                                    },
+                                }
+                            ],
+                        }
+                    }
+                    if kind == "RI"
+                    else {}
+                ),
                 fields=fields,
                 formula=kind
                 + " = "

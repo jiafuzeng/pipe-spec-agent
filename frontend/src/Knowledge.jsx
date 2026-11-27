@@ -71,12 +71,45 @@ function filesFrom(rows) {
       name: row.config.original_filename,
       count: 0,
       versions: [],
+      jobs: [],
     };
     item.count += row.count || 0;
+    item.jobs.push(row);
     item.versions.push(states[row.state] || row.state);
     map.set(row.source, item);
   }
   return [...map.values()];
+}
+function Review({ job, refresh }) {
+  const [actor, setActor] = useState(""), [rows, setRows] = useState(null),
+    [error, setError] = useState(""), [busy, setBusy] = useState(false);
+  const base = api + "/documents/" + job.source;
+  async function more() {
+    setBusy(true);
+    try {
+      const page = await request(base + "/chunks?job_id=" + job.id + "&offset=" + (rows?.length || 0) + "&limit=10");
+      setRows([...(rows || []), ...page]);
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  }
+  async function approve() {
+    if (!window.confirm("确认已逐项对照原文，发布这个索引版本？")) return;
+    setBusy(true);
+    try {
+      const params = new URLSearchParams({job_id:job.id, actor, confirmed:"true"});
+      await request(base + "/approve?" + params, {method:"POST"});
+      await refresh();
+    } catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  }
+  return <details><summary>审核版本 {job.id.slice(0,8)}</summary>
+    <a href={base + "/original?job_id=" + job.id} target="_blank" rel="noreferrer">打开原始文件</a>
+    {rows && <Chunks rows={rows} />}
+    {(!rows || rows.length < job.count) && <button onClick={more} disabled={busy}>查看切片</button>}
+    <label>审核人<input value={actor} onChange={(e) => setActor(e.target.value)} /></label>
+    <button disabled={busy || !actor.trim() || !rows?.length} onClick={approve}>确认审核并发布</button>
+    {error && <p role="alert">{error}</p>}
+  </details>;
 }
 function IndexedFiles({ revision }) {
   const [files, setFiles] = useState([]),
@@ -84,17 +117,19 @@ function IndexedFiles({ revision }) {
     [busy, setBusy] = useState("");
   useEffect(() => {
     if (offline) return;
-    let stop = false;
-    request(api + "/documents")
-      .then((rows) => {
-        if (!stop) setFiles(filesFrom(rows));
-      })
-      .catch((e) => {
-        if (!stop) setError(e.message);
-      });
-    return () => {
-      stop = true;
-    };
+    let stop = false, timer;
+    async function load() {
+      try {
+        const rows = await request(api + "/documents");
+        if (stop) return;
+        setFiles(filesFrom(rows));
+        if (rows.some((row) => ["queued","parsing","chunking","embedding"].includes(row.state))) {
+          timer = setTimeout(load, 1000);
+        }
+      } catch (e) { if (!stop) setError(e.message); }
+    }
+    load();
+    return () => { stop = true; clearTimeout(timer); };
   }, [revision]);
   async function remove(file) {
     if (!window.confirm("删除「" + file.name + "」的全部向量？")) return;
@@ -125,6 +160,9 @@ function IndexedFiles({ revision }) {
                   {file.versions.join("、")} · {file.count} 条向量
                 </small>
               </span>
+              {file.jobs.filter((j) => j.state === "failed").map((j) => <small key={j.id} role="alert">{j.error || "构建失败，请重新提交原始文件。"}</small>)}
+              {file.jobs.filter((j) => j.state === "built_pending_review" && j.config.original_filename.toLowerCase().endsWith(".pdf")).map((j) =>
+                <Review key={j.id} job={j} refresh={async () => setFiles(filesFrom(await request(api + "/documents")))} />)}
               <button
                 type="button"
                 className="danger"
@@ -158,6 +196,7 @@ export function ImportPage() {
     [strategy, setStrategy] = useState("structure"),
     [size, setSize] = useState(512),
     [overlap, setOverlap] = useState(64);
+  const [isPdf, setIsPdf] = useState(false);
   const [preview, setPreview] = useState(null),
     [created, setCreated] = useState(""),
     [revision, setRevision] = useState(0),
@@ -240,8 +279,13 @@ export function ImportPage() {
             <h3>原始文档</h3>
             <label className="upload">
               选择规程 PDF 或 Markdown
-              <input required name="source_file" type="file" accept=".pdf,.md" />
+              <input required name="source_file" type="file" accept=".pdf,.md"
+                onChange={(e) => setIsPdf(/\.pdf$/i.test(e.target.files[0]?.name || ""))} />
             </label>
+            {isPdf && <details><summary>关联已有 DocMind 解析文件</summary>
+              <label>版面 JSON<input type="file" name="docmind_json" accept=".json" /></label>
+              <label>解析 Markdown<input type="file" name="docmind_markdown" accept=".md" /></label>
+            </details>}
             <div className="fields">
               <label>
                 文档标题

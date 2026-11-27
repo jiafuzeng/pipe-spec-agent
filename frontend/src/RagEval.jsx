@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { api, request } from "./api.js";
+import { request } from "./api.js";
 
 function CaseResult({ row }) {
   return (
@@ -46,7 +46,7 @@ export function RagEval() {
     const controller = new AbortController();
     setReport(null);
     setError("");
-    request(api + "/rag-eval?mode=" + mode, { signal: controller.signal })
+    request("/api/v1/evaluations/rag?mode=" + mode, { signal: controller.signal })
       .then((data) => { if (!controller.signal.aborted) setReport(data); })
       .catch((e) => { if (!controller.signal.aborted) setError(e.message); });
     return () => controller.abort();
