@@ -1,6 +1,6 @@
 {
   "edition": "CJJ 181-2012",
-  "protocol": "每题独立建立会话；按 precondition 准备指定状态，仅向 Agent 发送 query。按 expected_action、acceptance、expected_citations 检查回答、引用、工具日志和图表。",
+  "protocol": "题面与人工 acceptance。机器判分以 agent_cases.json + specs/007 为准。expected_action 中 clarify_then_plot 映射为多轮：clarify_then_explain|clarify → calculate_and_plot。每题独立会话仅适用于无跨轮 precondition 的单轮叙述题。",
   "refusal": "依据 CJJ 181—2012 原文无相关规定，不作推测性补充。",
   "cases": [
     {
@@ -123,10 +123,12 @@
       "id": "SPEC-07",
       "origin": "任务书第7题",
       "query": "说明 RI 的计算公式及地区重要性参数 K 的取值分档；在此基础上固定其余参数，令 K 分别取 0、3、6、10，调用计算工具与绘图工具，输出 RI 随 K 变化的曲线图，并解释曲线走势的工程含义。",
-      "expected_action": "clarify_then_plot",
+      "expected_action": "clarify_then_explain",
+      "canonical_case": "AG-T07",
+      "note": "多轮：首轮 clarify_then_explain；次轮 calculate_and_plot（旧标签 clarify_then_plot 已废弃）",
       "acceptance": [
-        "给出 RI 公式、K 各档及适用条件。缺 F、E、T 时先追问。",
-        "已确认且规则已发布时，按同一组固定参数计算四个 K 点，展示坐标、曲线及等级依据。"
+        "给出 RI 公式、K 各档及适用条件。缺 F、E、T 时先追问；不得静默填入基准样例。",
+        "用户确认 F=6,E=6,T=0 且规则已发布/夹具后，按同一组固定参数计算四个 K 点，展示坐标、曲线及等级依据。"
       ],
       "expected_citations": [
         "8.3.4",
@@ -139,8 +141,9 @@
       "origin": "任务书第8题",
       "query": "帮我算一下这条管道的修复指数 RI。",
       "expected_action": "clarify",
+      "canonical_case": "AG-T08",
       "acceptance": [
-        "列 F、K、E、T 的用途和出处；允许提供确认值，或收集缺陷、区域、管径和土质资料以推导。",
+        "按 Schema 分组追问：F 或缺陷记录、K、E 或管径 D、T 或土质列；说明用途与出处。不得把 F 写成不可由缺陷替代的唯一必填。",
         "参数未齐时不得调用指数计算或给出 RI 与等级。"
       ],
       "expected_citations": [
@@ -156,7 +159,9 @@
       "id": "SPEC-09",
       "origin": "任务书第9题",
       "query": "DN1200 混凝土管道，位于城市主干道（K=6），管龄 35 年，土质为流砂；管段存在 2 处重度错口（单处分值 5），缺陷纵向间距 1.2 m，无其他缺陷。\n（1）计算 S、Smax、F 与 RI，判定修复等级并给出处置建议，注明各参数取值与公式的规程依据。\n（2）在其余条件不变的前提下，令土质参数 T 分别取 0、6、8、10，计算多组 RI，调用绘图工具输出 RI 随 T 变化的曲线，并解释土质条件对修复决策的影响。",
-      "expected_action": "clarify_then_plot",
+      "expected_action": "clarify",
+      "canonical_case": "AG-T09",
+      "note": "多轮：首轮 clarify（流砂）；T 确认后 calculate_and_plot。领域未发布前 AG-T09 blocked_until=T03_domain",
       "acceptance": [
         "用查分工具核对两处各5分；1.2m 落入 n2，α=1.1，不触发1m内叠加。",
         "K=6、E=6。流砂不能自行映射土质列；第一问待确认 T，管龄不入式。",
@@ -290,7 +295,7 @@
     },
     {
       "id": "V10",
-      "origin": "AG-04-A",
+      "origin": "AG-04-B",
       "query": "换另一段管，直接把刚才的修复指数再算一次。",
       "expected_action": "clarify",
       "acceptance": [

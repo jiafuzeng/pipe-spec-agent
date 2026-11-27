@@ -4,6 +4,8 @@ __pycache__/
 *.py[cod]
 
 data/knowledge/
+data/mcp/
+agentEval/last_report.json
 :memory:.ses
 .ruff_cache/
 

@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, patch
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
 from rag.dialogue import REFUSAL, router
 
 
@@ -15,10 +16,19 @@ class TurnTests(unittest.TestCase):
         self.url = f"/api/v1/sessions/{sid}/turns"
 
     def test_kn04_no_evidence(self):
-        with patch("rag.dialogue.call_tool", AsyncMock(return_value={"evidence": []})):
+        with patch("rag.dialogue.search_clauses", return_value={"evidence": []}):
             self.assertIn(
                 REFUSAL, self.api.post(self.url, json={"message": "库外问题"}).text
             )
+
+    def test_search_does_not_call_mcp(self):
+        with (
+            patch("rag.dialogue.search_clauses", return_value={"evidence": []}) as search,
+            patch("rag.dialogue.call_tool", AsyncMock()) as tool,
+        ):
+            self.api.post(self.url, json={"message": "第1.0.1条写了什么？"})
+            search.assert_called_once()
+            tool.assert_not_called()
 
     def test_cal08_unreleased(self):
         with patch(
@@ -31,10 +41,11 @@ class TurnTests(unittest.TestCase):
             )
             self.assertIn("待核验", response.text)
 
-    def test_ag06_failure(self):
+    def test_ag06_mcp_failure_on_calculation(self):
         with patch("rag.dialogue.call_tool", AsyncMock(side_effect=RuntimeError)):
-            text = self.api.post(self.url, json={"message": "查询条款"}).text
+            text = self.api.post(self.url, json={"message": "计算修复指数 RI"}).text
             self.assertIn("event: error", text)
+            self.assertIn("TOOL_UNAVAILABLE", text)
             self.assertNotIn("event: answer", text)
 
     def test_cal04_curve_requires_confirmed_fixed_parameters(self):
@@ -47,7 +58,12 @@ class TurnTests(unittest.TestCase):
                 return dict(status="approved", fields=fields, rule_version="fixture")
             if name == "calculate_index":
                 return {"result_id": "test-" + str(args["parameters"]["K"])}
-            return {"png_base64": "fixture", "csv": "fixture", "points": []}
+            return {
+                "resource_id": "chart-fixture",
+                "png_base64": "fixture",
+                "csv": "fixture",
+                "points": [],
+            }
 
         with patch("rag.dialogue.call_tool", dispatch):
             first = self.api.post(

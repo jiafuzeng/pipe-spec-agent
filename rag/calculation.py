@@ -2,43 +2,87 @@
 
 import hashlib
 import json
+import os
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 from rag.source import PDF_SHA
 
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def _rule_search_paths(kind):
+    """Yield candidate rule JSON paths. Fixtures only under RULE_FIXTURE=1; never worksheets/."""
+    names = (f"{kind}.json", f"{kind}.min.json")
+    if os.environ.get("RULE_FIXTURE") == "1":
+        fixture_dir = ROOT / "agentEval" / "fixtures" / "rules"
+        for name in names:
+            yield fixture_dir / name, True
+    if os.environ.get("RULES_DIR"):
+        dirs = [Path(os.environ["RULES_DIR"])]
+    else:
+        mcp_rules = ROOT / "pipe_assessment_mcp" / "rules"
+        dirs = [mcp_rules / "published", mcp_rules, ROOT / "rules"]
+    for rules_dir in dirs:
+        for name in names:
+            path = rules_dir / name
+            # Worksheets and reviews are never loadable production paths.
+            if "worksheets" in path.parts or "reviews" in path.parts:
+                continue
+            yield path, False
+
+
+def _case_value_grade(case):
+    expected = case.get("expected") or {}
+    return case.get("value", expected.get("RI") or expected.get("value")), case.get(
+        "grade", expected.get("grade")
+    )
+
 
 def rulebook(kind, version=None):
     if kind not in {"RI", "MI", "defect_score"}:
         raise ValueError("未知规则")
-    file = Path(__file__).resolve().parents[1] / "kb" / f"{kind}.json"
-    if not file.is_file():
-        return None
-    rule = json.loads(file.read_bytes())
-    if (
-        rule.get("status") != "approved"
-        or rule.get("source_hash") != PDF_SHA
-        or len(set(rule.get("reviewers", []))) < 2
-        or not rule.get("reference_cases")
-        or not rule.get("evidence")
-        or version
-        and rule.get("version") != version
-    ):
-        return None
-    if kind in {"RI", "MI"}:
-        if any(
-            field.get("minimum") is None or field.get("maximum") is None
-            for field in rule["fields"]
-        ):
-            return None
-        for case in rule["reference_cases"]:
-            result = evaluate(rule, case["parameters"])
+    for file, fixture_mode in _rule_search_paths(kind):
+        if not file.is_file():
+            continue
+        rule = json.loads(file.read_bytes())
+        if rule.get("status") != "approved":
+            continue
+        if fixture_mode:
+            if not rule.get("fixture_only"):
+                continue
+        else:
+            if rule.get("fixture_only"):
+                continue
             if (
-                numeric(result["value"]) != numeric(case["value"])
-                or result["grade"] != case["grade"]
+                rule.get("source_hash") != PDF_SHA
+                or len(set(rule.get("reviewers", []))) < 2
+                or not rule.get("reference_cases")
+                or not rule.get("evidence")
             ):
-                return None
-    return rule
+                continue
+        if version and rule.get("version") != version:
+            continue
+        if kind in {"RI", "MI"}:
+            if any(
+                field.get("minimum") is None or field.get("maximum") is None
+                for field in rule["fields"]
+            ):
+                continue
+            cases = rule.get("reference_cases") or []
+            if not fixture_mode and not cases:
+                continue
+            ok = True
+            for case in cases:
+                value, grade = _case_value_grade(case)
+                result = evaluate(rule, case["parameters"])
+                if numeric(result["value"]) != numeric(value) or result["grade"] != grade:
+                    ok = False
+                    break
+            if not ok:
+                continue
+        return rule
+    return None
 
 
 def missing_fields(fields, values):
@@ -82,7 +126,7 @@ def evaluate(rule, parameters):
         formula=rule["formula"],
         parameters=parameters,
         contributions=trace,
-        evidence=rule["evidence"],
+        evidence=rule.get("evidence") or [],
     )
 
 

@@ -66,7 +66,7 @@ data/knowledge/
 
 ### 3.3 当前首批导入数据
 
-仓库中已有原文 `docs/CJJ 181-2012 城镇排水管道检测与评估技术规程.pdf`，以及 DocMind 结果 `data/docmind/cjj-181-2012/document.json`、`document.md`。当前 JSON 顶层为 `RequestId` 和 `Data.layouts`，包含 611 个 layout；Markdown 文件约 63 KB。首次演示导入应由 Web 将原始 PDF 和这两个解析附件明确关联，复用 JSON layout，不再向 DocMind 重复提交；chunk 预览中应能看到 `pageNum`、`index`、`uniqueId`、`type`、`subType` 等来源字段。
+仓库样例：原文 `docs/CJJ 181-2012 城镇排水管道检测与评估技术规程.pdf`；解析产物优先落在 `data/knowledge/parsed/{source_doc_id}/`。过渡别名（只读查找顺序）：`data/document.json` 与 `data/document.md` → 历史目录 `data/docmind/cjj-181-2012/` → 权威 `data/knowledge/parsed/...`。JSON 顶层为 `RequestId` 和 `Data.layouts`。导入应明确关联原 PDF 与 layout；有 JSON 时不重复调用 DocMind。预览展示页码、章节、条款、内容类型（不再要求展示 uniqueId）。
 
 ## 4. 切片策略
 
@@ -118,8 +118,8 @@ profile 字段：`profile_id`、`provider`、`model_name`、`model_version`、`d
 
 | 字段 | 类型 | 含义 |
 |---|---|---|
-| `source_doc_id` | string/UUID | 文档版本 ID；同一原文的不同 SHA 为不同版本 |
-| `source_sha256` | string | 原始文件字节 SHA-256；去重与来源版本标识 |
+| `source_doc_id` | string | V1 **等于**原文 SHA-256（与现实现及删除 API 一致）。若日后引入独立 UUID，须同时保留 `source_sha256` 做去重，并迁移路径参数 |
+| `source_sha256` | string | 与 `source_doc_id` 相同的原始文件字节 SHA-256；写入 metadata 时两字段都填，避免只认其中一个 |
 | `original_filename` | string | 用户上传的原始文件名 |
 | `stored_path` | string | 服务端相对存储路径 |
 | `media_type` / `file_size` | string/int | 原始格式及字节数 |
@@ -187,7 +187,7 @@ profile 字段：`profile_id`、`provider`、`model_name`、`model_version`、`d
 
 ### `DELETE /api/v1/knowledge/documents/{source_doc_id}`
 
-删除指定文件的全部向量。`source_doc_id` 是该文件的 SHA-256。该文件的每个索引版本都标为 `deleted`，对应的 Chroma collection 被删除；其他文件的向量保持不变。删除写入审计记录。导入页列出尚未删除的文件，并提供这一操作。
+删除指定文件的全部向量。路径参数 `{source_doc_id}` 即为该文件的 SHA-256（见 §7.1）。该文件的每个索引版本都标为 `deleted`，对应的 Chroma collection 被删除；其他文件的向量保持不变。删除写入审计记录。导入页列出尚未删除的文件，并提供这一操作。
 
 ## 9. Web 页面要求
 

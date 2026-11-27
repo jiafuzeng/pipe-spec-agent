@@ -1,0 +1,256 @@
+{
+  "edition": "CJJ 181-2012",
+  "protocol": "specs/007-agent-eval-tdd.md。唯一机器契约；与 agent_validation.json 双文件并存（后者仅题面/人工 acceptance）。数值以 specs/03-calculation.md §7 为准。fixture_rules 需 RULE_FIXTURE=1 + fixtures/rules。",
+  "refusal": "依据 CJJ 181—2012 原文无相关规定，不作推测性补充。",
+  "cases": [
+    {
+      "id": "AG-L0-01",
+      "ci": true,
+      "origin": "02 §3.1 / 04 §1",
+      "tags": ["smoke", "sse"],
+      "precondition": {
+        "rules": "pending_review",
+        "index": "active_approved",
+        "session": "new"
+      },
+      "turns": [
+        {
+          "message": "CJJ 181—2012 的编制目的是什么？",
+          "expect": {
+            "action": "answer",
+            "first_event_fields": ["turn_id", "run_id", "event_id"],
+            "events_include": ["plan_step"],
+            "tool_calls": { "calculate_index": 0, "plot_curve": 0 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "AG-L0-02",
+      "ci": true,
+      "origin": "02 §12.2",
+      "tags": ["smoke", "mcp_offline"],
+      "precondition": {
+        "rules": "pending_review",
+        "index": "active_approved",
+        "session": "new",
+        "mcp": "offline"
+      },
+      "turns": [
+        {
+          "message": "第1.0.1条写了什么？",
+          "expect": {
+            "action": "answer",
+            "citations_any_of": ["1.0.1"],
+            "tool_calls": { "calculate_index": 0, "plot_curve": 0 },
+            "search_not_via_mcp": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "AG-L0-03",
+      "ci": true,
+      "origin": "02 §12.5",
+      "tags": ["smoke", "idempotency"],
+      "precondition": {
+        "rules": "approved",
+        "index": "active_approved",
+        "session": "new",
+        "fixture_rules": true
+      },
+      "turns": [
+        {
+          "message": "F=6 E=6 T=0 K=0，只算一次 RI，不要画图。",
+          "expect": {
+            "action": "answer",
+            "tool_calls": { "calculate_index": 1, "plot_curve": 0 },
+            "results": [{ "K": 0, "RI": "4.5" }],
+            "idempotent_retry_same_result_id": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "AG-L0-04",
+      "ci": true,
+      "origin": "CAL-04-A",
+      "tags": ["smoke", "block_unreviewed"],
+      "precondition": {
+        "rules": "pending_review",
+        "index": "active_approved",
+        "session": "new"
+      },
+      "turns": [
+        {
+          "message": "F=6 K=0 E=6 T=0，直接算 RI。",
+          "expect": {
+            "action": "block_unreviewed",
+            "tool_calls": { "calculate_index": 0, "plot_curve": 0 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "AG-T08",
+      "ci": true,
+      "origin": "任务书第8题 / AG-02-A",
+      "tags": ["clarify"],
+      "precondition": {
+        "rules": "approved",
+        "index": "active_approved",
+        "session": "new",
+        "fixture_rules": true
+      },
+      "turns": [
+        {
+          "message": "帮我算一下这条管道的修复指数 RI。",
+          "expect": {
+            "action": "clarify",
+            "missing_parameter_groups": [
+              { "id": "F_or_defects", "any_of": ["F", "defects", "缺陷"] },
+              { "id": "K", "any_of": ["K"] },
+              { "id": "E_or_D", "any_of": ["E", "D", "管径"] },
+              { "id": "T_or_soil", "any_of": ["T", "soil", "土质"] }
+            ],
+            "tool_calls": { "calculate_index": 0, "plot_curve": 0 },
+            "events_include": ["clarification_required"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "AG-T07",
+      "ci": false,
+      "origin": "任务书第7题 / AG-01-A / 03 §7.1",
+      "tags": ["multi_turn", "plot"],
+      "precondition": {
+        "rules": "approved",
+        "index": "active_approved",
+        "session": "new",
+        "subject_id": "pipe-A",
+        "fixture_rules": true
+      },
+      "turns": [
+        {
+          "message": "说明 RI 的计算公式及地区重要性参数 K 的取值分档；在此基础上固定其余参数，令 K 分别取 0、3、6、10，调用计算工具与绘图工具，输出 RI 随 K 变化的曲线图。",
+          "expect": {
+            "action": "clarify_then_explain",
+            "citations_any_of": ["8.3.4", "表8.3.4-1"],
+            "missing_parameters": ["F", "E", "T"],
+            "tool_calls": { "calculate_index": 0, "plot_curve": 0 },
+            "events_include": ["plan_step", "clarification_required"],
+            "same_run_continues": true
+          }
+        },
+        {
+          "message": "F=6、E=6、T=0，按刚才那四个 K 画图。",
+          "expect": {
+            "action": "calculate_and_plot",
+            "tool_calls": { "calculate_index": 4, "plot_curve": 1 },
+            "reuse_parameters": ["F", "E", "T"],
+            "results": [
+              { "K": 0, "RI": "4.5" },
+              { "K": 3, "RI": "4.8" },
+              { "K": 6, "RI": "5.1" },
+              { "K": 10, "RI": "5.5" }
+            ],
+            "chart": { "required": true, "points": 4 },
+            "events_include": ["tool_call", "chart", "answer"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "AG-V11",
+      "ci": true,
+      "origin": "KN-02-A",
+      "tags": ["refuse"],
+      "precondition": {
+        "rules": "pending_review",
+        "index": "active_approved",
+        "session": "new"
+      },
+      "turns": [
+        {
+          "message": "管道声纳检测在北京每米最低收费多少？",
+          "expect": {
+            "action": "refuse",
+            "refusal_text": "依据 CJJ 181—2012 原文无相关规定，不作推测性补充。",
+            "tool_calls": { "calculate_index": 0, "plot_curve": 0 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "AG-V13",
+      "ci": true,
+      "origin": "AG-06-A",
+      "tags": ["partial_answer"],
+      "precondition": {
+        "rules": "pending_review",
+        "index": "active_approved",
+        "session": "new"
+      },
+      "turns": [
+        {
+          "message": "检查井应该什么时候检查？顺便告诉我本市的检测补贴金额。",
+          "expect": {
+            "action": "partial_answer",
+            "citations_any_of": ["9.0.1"],
+            "partial": [
+              { "topic": "检查井时机", "status": "answered" },
+              { "topic": "补贴", "status": "refused" }
+            ],
+            "tool_calls": { "calculate_index": 0, "plot_curve": 0 }
+          }
+        }
+      ]
+    },
+    {
+      "id": "AG-T09",
+      "ci": false,
+      "blocked_until": "T03_domain",
+      "origin": "任务书第9题 / 03 §7.2",
+      "tags": ["multi_turn", "defect", "plot"],
+      "precondition": {
+        "rules": "approved",
+        "index": "active_approved",
+        "session": "new",
+        "subject_id": "pipe-9",
+        "fixture_rules": true
+      },
+      "turns": [
+        {
+          "message": "DN1200 混凝土管道，位于城市主干道（K=6），管龄 35 年，土质为流砂；管段存在 2 处重度错口（单处分值 5），缺陷纵向间距 1.2 m，无其他缺陷。计算 S、Smax、F 与 RI。",
+          "expect": {
+            "action": "clarify",
+            "missing_parameters": ["T"],
+            "tool_calls": { "calculate_index": 0, "plot_curve": 0 },
+            "same_run_continues": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "AG-T-MI-01",
+      "ci": true,
+      "origin": "CAL-08-A",
+      "tags": ["mi", "block_unreviewed"],
+      "precondition": {
+        "rules": "pending_review",
+        "index": "active_approved",
+        "session": "new"
+      },
+      "turns": [
+        {
+          "message": "管段的养护指数 MI 怎么算？请直接给出数值。",
+          "expect": {
+            "action": "block_unreviewed",
+            "tool_calls": { "calculate_index": 0, "plot_curve": 0 }
+          }
+        }
+      ]
+    }
+  ]
+}

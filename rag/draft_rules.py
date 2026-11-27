@@ -1,4 +1,8 @@
-"""Materialize review worksheets from the checked-in parse; outputs remain pending."""
+"""Materialize review worksheets from DocMind parse to stdout (pending_review).
+
+Does not write into the repo. Approved packages belong in pipe-assessment-mcp/rules/
+(or RULES_DIR); eval fixtures live under agentEval/fixtures/rules/.
+"""
 
 import json
 import re
@@ -126,7 +130,29 @@ def candidate_rules(root):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Generate pending_review worksheets for dual review (specs/008)."
+    )
     parser.add_argument("kind", choices=["RI", "MI", "defect_score"])
-    name = parser.parse_args().kind
-    print(json.dumps(dict(candidate_rules(ROOT))[name], ensure_ascii=False, indent=2))
+    parser.add_argument(
+        "--write",
+        action="store_true",
+        help="Write to pipe_assessment_mcp/rules/worksheets/<kind>.pending.json",
+    )
+    args = parser.parse_args()
+    payload = dict(candidate_rules(ROOT))[args.kind]
+    payload["status"] = "pending_review"
+    text = json.dumps(payload, ensure_ascii=False, indent=2)
+    if args.write:
+        out = (
+            ROOT
+            / "pipe_assessment_mcp"
+            / "rules"
+            / "worksheets"
+            / f"{args.kind}.pending.json"
+        )
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(text + "\n", encoding="utf-8")
+        print(f"wrote {out} (pending_review; not loadable by rulebook)")
+    else:
+        print(text)

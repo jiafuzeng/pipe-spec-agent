@@ -5,7 +5,7 @@
       "name": "MCP",
       "type": "debugpy",
       "request": "launch",
-      "module": "rag.mcp_server",
+      "module": "pipe_assessment_mcp",
       "console": "integratedTerminal",
       "cwd": "${workspaceFolder}",
       "python": "${workspaceFolder}/.venv/bin/python",

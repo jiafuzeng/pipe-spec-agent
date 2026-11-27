@@ -6,16 +6,18 @@
 
 - [00 项目章程](00-constitution.md)
 - [01 需求与验收](01-requirements.md)
-- [02 技术设计](02-technical-design.md)
+- [02 技术设计](02-technical-design.md)：两个交付物（`pipe-spec-agent`、`pipe-assessment-mcp`）、三个进程，以及目标目录结构
 - [001 知识来源、检索与引用](001-knowledge-and-citations.md)
 - [002 Agent 规划、追问与会话状态](002-agent-dialogue.md)
 - [003 计算、MCP 与曲线](003-calculation-mcp.md)
 - [004 Web 演示与项目交付](004-web-demo-and-deliverables.md)
 - [006 RAG 文档导入与向量索引 V1](006-rag-ingestion-v1.md)
+- [007 Agent 测试用例与 agentEval（TDD）](007-agent-eval-tdd.md)：先冻结可执行用例，再设计执行器；与 `ragEval` 分工
+- [008 计算规则双人审核（T03）](008-rule-dual-review.md)：worksheet → A/B 对照 PDF → `validate_rules` → published
 - [03 计算规则规格](03-calculation.md)
 - [04 接口与参数槽位规格](04-interfaces.md)
 - [05 实施任务与交付门禁](05-tasks.md)
-- [技术实现方案](../docs/技术实现方案与Spec清单.md)
+- [技术实现方案](../docs/技术实现方案与Spec清单.md)（**若与本目录冲突，以本目录为准**）
 
 ## 状态约定
 
@@ -38,7 +40,9 @@
 | 任务说明 | Spec | 主要验收场景 |
 |---|---|---|
 | 唯一知识源、混合检索与重排、条款号、无依据拒答 | 00、01、001 | KN-01 至 KN-07 |
-| 规划、参数追问、同会话记忆 | 00、01、002 | AG-01 至 AG-06 |
-| 缺陷分值、RI/MI、绘图与 MCP | 00、01、003 | CAL-01 至 CAL-08 |
+| 规划、参数追问、同会话记忆 | 00、01、002 | AG-01 至 AG-06（场景 ID 见各节 `traces_to`） |
+| 缺陷分值、RI/MI、绘图与 MCP | 00、01、003、04、008 | CAL-01 至 CAL-08；T03 双审见 008 / REV-01–05 |
+| 计算规则双审与发布门禁 | 008、03 §7.0、05 T03 | worksheet / reviews / published；`validate_rules` |
 | Web、九题演示、知识库导入、答卷和自查说明 | 01、004 | WEB-01 至 WEB-09 |
-| LlamaIndex 文档切片、embedding 选择、Chroma 持久化与来源 metadata | 01、001、004、006 | R8、KN-07、WEB-07 至 WEB-09、ING-01 至 ING-09 |
+| LlamaIndex 文档切片、embedding 选择、Chroma 持久化与来源 metadata | 01、001、004、006 | ING-01 至 ING-09；`source_doc_id`=SHA-256 |
+| Agent TDD 与评测执行器 | 007、02 §12、05 T14 | `agent_cases.json` 先红灯再实现 |

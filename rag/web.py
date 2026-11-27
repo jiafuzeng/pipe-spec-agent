@@ -309,9 +309,41 @@ app.include_router(dialogue_router)
 
 @app.get("/health")
 def healthcheck():
-    with db.connect() as connection:
-        connection.execute("SELECT 1")
-    return {"status": "ok"}
+    components = {
+        "app": {"status": "ok"},
+        "registry": {"status": "ok"},
+        "embedding": {"status": "configured" if os.getenv("OLLAMA_BASE_URL") or os.getenv("DASHSCOPE_API_KEY") else "unconfigured"},
+        "chat_model": {"status": "configured" if os.getenv("CHAT_BASE_URL") else "unconfigured"},
+        "reranker": {"status": "configured" if os.getenv("RERANKER_BASE_URL") or os.getenv("RERANKER_MODEL") else "unconfigured"},
+        "mcp": {"status": "unavailable"},
+    }
+    try:
+        with db.connect() as connection:
+            connection.execute("SELECT 1")
+    except Exception as exc:
+        components["registry"] = {"status": "error", "detail": str(exc)}
+    if os.getenv("MCP_INLINE") in {"1", "true", "True"} or os.getenv("MCP_URL") in {
+        "offline",
+        "inline",
+    }:
+        components["mcp"] = {"status": "inline"}
+    else:
+        mcp_url = os.getenv("MCP_URL", "http://127.0.0.1:8001/mcp")
+        try:
+            import urllib.request
+
+            base = mcp_url.rstrip("/").removesuffix("/mcp")
+            urllib.request.urlopen(base + "/health", timeout=1.5)
+            components["mcp"] = {"status": "ok"}
+        except Exception:
+            try:
+                import urllib.request
+
+                urllib.request.urlopen(mcp_url, timeout=1.5)
+                components["mcp"] = {"status": "ok"}
+            except Exception:
+                components["mcp"] = {"status": "unavailable"}
+    return {"status": "ok", "components": components}
 
 
 @app.get(API + "/limits")
@@ -327,10 +359,19 @@ def limits():
     }
 
 @app.get(API + "/rag-eval")
+@app.get("/api/v1/evaluations/rag")
 def rag_eval(mode: str = "bm25"):
     if mode not in {"bm25", "hybrid"}:
         raise HTTPException(422, "未知评测方式")
     path = Path(__file__).resolve().parents[1] / "ragEval" / f"{mode}_scores.json"
     if not path.is_file():
         raise HTTPException(404, f"暂无评测报告，请先运行 ragEval/retrieval.py 生成 {mode}_scores.json")
+    return FileResponse(path, media_type="application/json", headers={"Cache-Control": "no-store"})
+
+
+@app.get("/api/v1/evaluations/agent")
+def agent_eval_report():
+    path = Path(__file__).resolve().parents[1] / "agentEval" / "last_report.json"
+    if not path.is_file():
+        raise HTTPException(404, "暂无 agentEval 报告，请先运行 python -m agentEval.run")
     return FileResponse(path, media_type="application/json", headers={"Cache-Control": "no-store"})

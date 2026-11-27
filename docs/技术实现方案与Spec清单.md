@@ -1,12 +1,17 @@
 # 技术规程问答 Agent 技术实现方案
 
+> **权威声明（2026-03 起）**  
+> 行为与接口以 `specs/` 为准，尤其是 `04-interfaces.md`、`006-rag-ingestion-v1.md`、`007-agent-eval-tdd.md`、`02-technical-design.md` §12。  
+> 本文是早期方案叙述；若与 Spec 冲突，**改本文或删除过时段，不得按本文开工**。  
+> 仓库已有 `rag/`、`frontend/`、导入与混合检索实现；目标架构仍为双交付物 + 三进程，过渡路径见 `02` §12。
+
 ## 1. 目标与实现边界
 
 本项目交付一个可现场演示的 Web 版技术规程问答 Agent，围绕《CJJ 181—2012 城镇排水管道检测与评估技术规程》完成条文问答、检测方案比较、参数追问、RI 等规程计算和曲线绘制。回答、计算依据和建议均限制在该规程原文内；规程没有规定的事项必须明确答复“依据 CJJ 181—2012 原文无相关规定，不作推测性补充”。
 
 采用 Spec 驱动开发：先把可观察的用户行为、输入输出、拒答边界和验收例子写成版本化规格，再实现服务与界面。每个需求都能追溯到一个 Spec、实现模块和验收用例。LLM 负责理解、规划和表达；条款查证、参数校验、计算、等级判定和图表数据由确定性组件完成。
 
-当前仓库已有项目章程和九题需求基线，但尚无应用代码和部署约束。因此，本文件补充架构与实现方案，不替换 `specs/00-constitution.md`、`specs/01-requirements.md`，也不声称应用已经开发或测试通过。落地前需完成规程条款与计算参数的结构化核验，尤其是计算公式、分档边界和处置结论。
+落地前需完成规程条款与计算参数的结构化核验，尤其是计算公式、分档边界和处置结论。评测可用 `RULE_FIXTURE=1` 夹具；生产不得用未审核规则产出正式 RI/MI。
 
 ## 2. 需求约束与产品行为
 
@@ -29,20 +34,22 @@
 
 ## 3. 技术架构
 
-首版采用混合检索与重排：按条款切分的 JSONL 作为权威语料，BM25 负责关键词召回，向量检索负责语义召回；两路候选合并、去重后直接交给 reranker，按查询与证据的相关性重排并截取最终结果。章节、条款号和内容类型过滤及精确条款匹配优先执行。参数表用人工核验的 YAML。向量索引与语料版本绑定，可本地构建和重建，不要求独立向量数据库服务。
+V1 定为两个独立交付物、三个运行进程：`pipe-spec-agent` 提供 React 前端和 FastAPI 应用，`pipe-assessment-mcp` 提供远程计算服务。LangGraph 负责一项任务怎么走，RAG 负责规程依据在哪里，MCP 负责按哪个规则版本算出什么结果。计算服务离线不阻止主应用启动。目录与缺口见 `specs/02-technical-design.md`；**HTTP/MCP 唯一契约**见 `specs/04-interfaces.md`；Agent TDD 见 `specs/007-agent-eval-tdd.md` 与 `agentEval/agent_cases.json`。检索不在 MCP 上；`result_id`/`resource_id` 为规范字段名。
+
+首版采用混合检索与重排（见 `006`）：DocMind / Markdown → LlamaIndex 切片 → Chroma + SQLite metadata；BM25 与向量候选合并去重后直接 reranker，**不使用 RRF**。`kb/clauses.jsonl` **不是** V1 运行时权威语料；主仓已删除 `kb/` 规则草稿目录。计算规则为审核后的 JSON 规则包（目标位于 `pipe-assessment-mcp/rules/`；评测夹具在 `agentEval/fixtures/rules/`）。
 
 ```mermaid
 flowchart LR
-    U[Web 用户界面] --> API[FastAPI 会话 API]
-    API --> G[Python 状态编排器]
-    G --> R[BM25 + 向量召回]
+    U[React 前端] --> API[FastAPI 应用]
+    API --> G[LangGraph 单图]
+    G --> R[RAG 检索]
     R --> K[合并去重后由 Reranker 重排]
     G --> M[MCP 客户端]
-    M --> Q[FastMCP 服务]
+    M --> Q[pipe-assessment-mcp]
     Q --> C[查表与确定性计算]
     Q --> V[绘图工具]
-    R --> D[(条款 JSONL 与参数 YAML)]
-    G --> S[(会话内存与执行日志)]
+    R --> D[(已发布索引)]
+    G --> S[(SQLite 业务表与 checkpoint)]
 ```
 
 ### 3.1 推荐组件
@@ -51,13 +58,13 @@ flowchart LR
 |---|---|---|
 | 前端 | React，独立进程 | 页面包含对话、计划与 MCP 日志、当前槽位；不由 API 进程提供 |
 | API | Python 3.11+、FastAPI | 只管理会话、导入、审核和健康检查，不返回页面 |
-| Agent 编排 | Python 显式状态机/流程编排器、Pydantic | 受控节点、追问暂停/恢复、参数校验和调用轨迹；不引入不必要的工作流框架 |
+| Agent 编排 | LangGraph 单图、Pydantic | 查依据、核对证据、补参数、调用计算、生成图表。允许一轮部分完成；Web 与 agentEval 共用执行入口 |
 | RAG 入库与检索 | LlamaIndex `IngestionPipeline` + Chroma 本地持久化 + BM25 + reranker | Web 导入并预览切片、选择 embedding profile；保留原文/DocMind 页码与版面 metadata；BM25 与向量候选合并去重后直接 rerank，不使用 RRF |
-| MCP | FastMCP 独立进程、Streamable HTTP | 隔离条款/参数查询、确定性计算和绘图；强 Schema、调用记录和超时策略 |
-| 规则数据 | JSONL + YAML | YAML 保存审核后的分值/参数表和公式版本；OCR 草稿不直接进入运行时规则 |
+| MCP | 独立交付物 `pipe-assessment-mcp`，FastMCP、Streamable HTTP | 查 Schema、查分、确定性计算和绘图；规则版本、幂等键和图表资源 ID 由该服务拥有 |
+| 规则数据 | 审核后 JSON 规则包（MCP `rules/`） | 含版次、出处、审核人、reference_cases；OCR/草稿不进生产；评测用 `agentEval/fixtures` |
 | 数值计算 | Python 纯函数 + `decimal.Decimal` | RI/MI、中间量、等级和边界比较；不由模型计算或查表 |
-| 图表 | Matplotlib 输出 PNG | 绘图工具基于计算点生成图片和坐标数据，前端直接展示 |
-| 会话与日志 | 演示版按 `session_id` 存在进程内存 | 满足单实例现场演示；明确进程重启会清空会话。多实例/长期保存不列入首版 |
+| 图表 | Matplotlib → `resource_id`；主项目代读 | SSE `chart` 只带资源 ID，不塞整图 Base64（见 `04`） |
+| 会话与日志 | 一个 SQLite 实例中的业务表和 LangGraph checkpoint | `session_id`、`subject_id`、`turn_id`、`run_id`、`step_id` 分开。确认事实和工具结果可跨轮恢复 |
 | 模型接入 | OpenAI 兼容 HTTP 接口，密钥/地址放环境变量 | 模型只处理意图、槽位抽取、规划和行文；供应商可替换 |
 | 部署 | Docker Compose | 前端、API、MCP 三个服务；前端把 `/api` 转到 API，并提供健康检查 |
 

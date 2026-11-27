@@ -30,17 +30,25 @@ class CalculationTests(unittest.TestCase):
         ]
         self.assertEqual(missing_fields(fields, {"T": 0}), fields[:1])
 
-    def test_cal08_real_drafts_never_publish(self):
+    def test_cal08_no_published_rules_without_fixture(self):
+        import os
         from rag.calculation import rulebook
-        from rag.draft_rules import ROOT, candidate_rules
 
-        drafts = dict(candidate_rules(ROOT))
-        self.assertEqual(len(drafts["RI"]["bands"]), 4)
-        row = next(
-            r
-            for r in drafts["defect_score"]["rows"]
-            if r["defect"] == "错口" and r["grade"] == 3
-        )
-        self.assertEqual(row["score"], "5")
-        for kind in drafts:
+        os.environ.pop("RULE_FIXTURE", None)
+        for kind in ("RI", "MI", "defect_score"):
             self.assertIsNone(rulebook(kind))
+
+    def test_fixture_ri_loads_only_with_flag(self):
+        import os
+        from rag.calculation import rulebook
+
+        os.environ.pop("RULE_FIXTURE", None)
+        self.assertIsNone(rulebook("RI"))
+        os.environ["RULE_FIXTURE"] = "1"
+        try:
+            rule = rulebook("RI")
+            self.assertIsNotNone(rule)
+            self.assertTrue(rule.get("fixture_only"))
+            self.assertEqual(rule["version"], "CJJ181-2012-fixture-ri-7.1")
+        finally:
+            os.environ.pop("RULE_FIXTURE", None)
