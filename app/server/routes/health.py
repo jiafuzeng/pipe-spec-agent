@@ -1,7 +1,7 @@
 import os
 from fastapi import APIRouter
 from app.server.routes import knowledge
-from app.config import mcp_headers, mcp_url
+from app.settings import chat, mcp_headers, mcp_url
 
 router = APIRouter()
 
@@ -17,7 +17,7 @@ def healthcheck():
             else "unconfigured"
         },
         "chat_model": {
-            "status": "configured" if os.getenv("CHAT_BASE_URL") else "unconfigured"
+            "status": "configured" if chat().base_url else "unconfigured"
         },
         "reranker": {
             "status": "configured"

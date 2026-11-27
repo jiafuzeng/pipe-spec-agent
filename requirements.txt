@@ -17,3 +17,5 @@ alibabacloud-tea-openapi
 alibabacloud-tea-util
 langgraph==1.2.24
 langgraph-checkpoint-sqlite==3.1.3
+langchain>=0.3
+langchain-openai>=0.3

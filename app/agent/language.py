@@ -1,83 +1,58 @@
-"""Model suggestions are limited to intent labels, retrieval questions and quoted slots."""
+"""聊天模型入口与结构化 LLM 调用。"""
 
 import json
-import os
-import re
+from typing import Literal, TypeVar
 
-import httpx
-from pydantic import BaseModel, Field
-from typing import Literal
+from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, SecretStr
 
+from app.settings import chat
 
-class Plan(BaseModel):
-    intent: Literal["qa", "compare", "explain", "plan", "calculate"]
-    questions: list[str] = Field(default_factory=list, max_length=4)
+# 全局意图（规则初判 + LLM 共用）
+# qa        普通规程问答 → ReAct 检索
+# compare   检测方法对比 → ReAct，证据按方法名过滤
+# explain   原理/顺序解释 → ReAct
+# plan      检测方案规划 → ReAct
+# chitchat  寒暄/身份询问 → 直答，不检索
+Intent = Literal["qa", "compare", "explain", "plan", "chitchat"]
 
-
-class Slot(BaseModel):
-    name: str
-    value: str
-    quote: str = Field(min_length=1)
-
-
-class Extraction(BaseModel):
-    slots: list[Slot] = Field(default_factory=list, max_length=30)
+T = TypeVar("T", bound=BaseModel)
 
 
-async def structured(model, instruction, inputs):
-    if os.getenv("AGENT_MODEL_ENABLED", "1") == "0" or not all(
-        os.getenv(key) for key in ("CHAT_MODEL", "CHAT_BASE_URL")
-    ):
+class IntentResult(BaseModel):
+    """LLM 意图判定输出。"""
+
+    intent: Intent
+
+
+def chat_model() -> ChatOpenAI:
+    """统一构造 OpenAI 兼容聊天模型（读 app.settings.chat）。"""
+    cfg = chat()
+    return ChatOpenAI(
+        model=cfg.model,
+        api_key=SecretStr(cfg.api_key),
+        base_url=cfg.base_url,
+        temperature=0,
+        timeout=cfg.timeout,
+    )
+
+
+async def structured(model: type[T], instruction: str, inputs: object) -> T | None:
+    """按 Pydantic 模型拉结构化结果；未就绪或失败时返回 None。"""
+    if not chat().ready:
         return None
     try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            response = await client.post(
-                os.environ["CHAT_BASE_URL"].rstrip("/") + "/chat/completions",
-                headers={"Authorization": "Bearer " + os.getenv("CHAT_API_KEY", "")},
-                json={
-                    "model": os.environ["CHAT_MODEL"],
-                    "temperature": 0,
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": instruction
-                            + " 仅返回 JSON，格式："
-                            + json.dumps(model.model_json_schema(), ensure_ascii=False),
-                        },
-                        {
-                            "role": "user",
-                            "content": json.dumps(inputs, ensure_ascii=False),
-                        },
-                    ],
-                },
-            )
-            response.raise_for_status()
-            content = response.json()["choices"][0]["message"]["content"].strip()
-            return model.model_validate_json(
-                re.sub(r"^```(?:json)?\s*|\s*```$", "", content)
-            )
-    except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
+        llm = chat_model().with_structured_output(model)
+        result = await llm.ainvoke(
+            [
+                ("system", instruction),
+                ("human", json.dumps(inputs, ensure_ascii=False)),
+            ]
+        )
+        if isinstance(result, model):
+            return result
+        if isinstance(result, dict):
+            return model.model_validate(result)
         return None
-
-
-async def extract_slots(query, fields):
-    result = await structured(
-        Extraction,
-        "只抽取用户明确提供且属于字段的值。逐项逐字引用含字段和值的原句。"
-        "不推导系数，不映射管径、道路或土质，不提取假设、未知或曲线扫描值。",
-        {"消息": query, "可用字段": fields},
-    )
-    facts = {}
-    for item in result.slots if result else []:
-        field = next((f for f in fields if f["name"] == item.name), None)
-        if not field or item.quote not in query or item.value not in item.quote:
-            continue
-        if not any(
-            label in item.quote
-            for label in (item.name, field.get("label_zh") or item.name)
-        ):
-            continue
-        if re.search("假设|如果|未知|不确定|还是|或者", item.quote):
-            continue
-        facts[item.name] = item.value
-    return facts
+    except Exception:
+        return None

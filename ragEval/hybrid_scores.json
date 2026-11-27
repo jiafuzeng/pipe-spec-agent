@@ -3211,7 +3211,7 @@
             "bm25",
             "vector"
           ],
-          "reranker_score": 0.6017926806140572
+          "reranker_score": 0.6017926946753416
         },
         {
           "id": "f53b7ec0a64329ecf109702e1e3934e97286b437316d277143493de4fb8c8edc",

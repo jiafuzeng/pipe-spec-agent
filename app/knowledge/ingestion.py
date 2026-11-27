@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import re
+import threading
 
 from llama_index.core import Document
 from llama_index.core.ingestion import IngestionPipeline
@@ -271,10 +272,21 @@ def index_nodes(source, parsed_dir, meta):
     return nodes
 
 
-def client(root):
-    import chromadb
+_chroma_clients = {}
+_chroma_lock = threading.Lock()
 
-    return chromadb.PersistentClient(path=str(root / "chroma"))
+
+def client(root):
+    """One client per index path. Concurrent PersistentClient() calls race and fail."""
+    path = str(root / "chroma")
+    with _chroma_lock:
+        cached = _chroma_clients.get(path)
+        if cached is None:
+            import chromadb
+
+            cached = chromadb.PersistentClient(path=path)
+            _chroma_clients[path] = cached
+        return cached
 
 
 def build(root, registry, job, source, parsed_dir, config):

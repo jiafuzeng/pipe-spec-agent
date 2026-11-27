@@ -12,7 +12,7 @@ from llama_index.core.embeddings import MockEmbedding
 
 from main import app
 from app.server.routes import knowledge as web
-from app.rag.pipeline import client
+from app.knowledge.ingestion import client
 from app.knowledge.registry import Registry
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,7 +32,7 @@ class WebIngestionTests(unittest.TestCase):
             patch.object(web, "ROOT", Path(tmp)),
             patch.object(web, "db", Registry(Path(tmp))),
             patch.object(web, "model", return_value=embed) as probe,
-            patch("app.rag.pipeline.model", return_value=embed),
+            patch("app.knowledge.ingestion.model", return_value=embed),
         ):
             api = TestClient(app)
             prefix = web.API
@@ -64,11 +64,11 @@ class WebIngestionTests(unittest.TestCase):
             )
             self.assertEqual(response.status_code, 200, response.text)
             self.assertEqual(restored.active()[0]["id"], job)
-            from app.rag.retrieval import search
+            from app.knowledge.retrieval import search
 
             with (
-                patch("app.rag.retrieval.model", return_value=embed),
-                patch("app.rag.retrieval.reranker") as rank,
+                patch("app.knowledge.retrieval.model", return_value=embed),
+                patch("app.knowledge.retrieval.reranker") as rank,
             ):
                 rank.return_value.predict.side_effect = lambda pairs: [0.5] * len(pairs)
                 hits = search(Path(tmp), restored, "第1.0.1条")
@@ -119,7 +119,7 @@ class WebIngestionTests(unittest.TestCase):
             ),
         ):
             api = TestClient(app)
-            with patch("app.rag.pipeline.model", return_value=embed):
+            with patch("app.knowledge.ingestion.model", return_value=embed):
                 job = api.post(web.API + "/imports", files=files).json()["job_id"]
             parser.assert_called_once()
             row = web.job_info(job)
@@ -135,7 +135,7 @@ class WebIngestionTests(unittest.TestCase):
             )
             web.approve(row["source"], job, "test", True)
             with patch(
-                "app.rag.pipeline.model", side_effect=RuntimeError("private provider error")
+                "app.knowledge.ingestion.model", side_effect=RuntimeError("private provider error")
             ):
                 other = api.post(
                     web.API + "/imports", files=files, data={"chunking.chunk_size": 768}

@@ -1,63 +1,165 @@
-import React from "react";
+import React, { useCallback, useMemo } from "react";
+import {
+  Background,
+  Controls,
+  Handle,
+  MarkerType,
+  MiniMap,
+  Position,
+  ReactFlow,
+  ReactFlowProvider,
+  useEdgesState,
+  useNodesState,
+} from "@xyflow/react";
+import dagre from "@dagrejs/dagre";
+import "@xyflow/react/dist/style.css";
 
-const W = 148;
-const H = 52;
+const NODE_W = 168;
+const NODE_H = 56;
 
-function box(cx, cy, title, name, note = "", terminal = false) {
-  return { cx, cy, x: cx - W / 2, y: cy - H / 2, title, name, note, terminal };
+/** Mirrors compile_graph() in app/agent/workflow.py */
+const GRAPH = {
+  nodes: [
+    { id: "START", title: "开始", kind: "terminal" },
+    { id: "recognize", title: "意图识别", note: "闲聊可结束" },
+    { id: "react", title: "create_agent", note: "检索+总结", lane: "qa" },
+    { id: "END", title: "结束", kind: "terminal" },
+  ],
+  edges: [
+    ["START", "recognize"],
+    ["recognize", "react"],
+    ["recognize", "END"],
+    ["react", "END"],
+  ],
+};
+
+function layoutGraph(direction = "TB") {
+  const g = new dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+  g.setGraph({
+    rankdir: direction,
+    nodesep: 48,
+    ranksep: 64,
+    marginx: 24,
+    marginy: 24,
+  });
+
+  const rawNodes = GRAPH.nodes.map((node) => ({
+    id: node.id,
+    type: "topology",
+    data: {
+      title: node.title,
+      name: node.id,
+      note: node.note || "",
+      kind: node.kind || "step",
+      lane: node.lane || "",
+    },
+    position: { x: 0, y: 0 },
+    sourcePosition: direction === "LR" ? "right" : "bottom",
+    targetPosition: direction === "LR" ? "left" : "top",
+  }));
+  const rawEdges = GRAPH.edges.map(([source, target], index) => ({
+    id: `${source}->${target}-${index}`,
+    source,
+    target,
+    type: "smoothstep",
+    animated: source === "recognize" && target === "react",
+    markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: "#176954" },
+    style: { stroke: "#176954", strokeWidth: 1.6 },
+  }));
+
+  rawNodes.forEach((node) => g.setNode(node.id, { width: NODE_W, height: NODE_H }));
+  rawEdges.forEach((edge) => g.setEdge(edge.source, edge.target));
+  dagre.layout(g);
+
+  const nodes = rawNodes.map((node) => {
+    const pos = g.node(node.id);
+    return {
+      ...node,
+      position: {
+        x: pos.x - NODE_W / 2,
+        y: pos.y - NODE_H / 2,
+      },
+    };
+  });
+  return { nodes, edges: rawEdges };
 }
 
-const nodes = [
-  box(420, 40, "开始", "START", "", true),
-  box(420, 132, "规划", "plan"),
-  box(176, 248, "检索", "retrieve"),
-  box(664, 248, "规则", "schema", "可结束"),
-  box(176, 356, "核对", "verify", "可结束"),
-  box(664, 356, "收参", "collect", "可结束"),
-  box(176, 464, "回答", "answer", "可结束"),
-  box(664, 464, "计算", "calculate", "可结束"),
-  box(664, 572, "绘图", "plot"),
-  box(420, 572, "结束", "END", "", true),
-];
+function TopologyNode({ data, sourcePosition, targetPosition }) {
+  return (
+    <div className={"topo-node" + (data.kind === "terminal" ? " terminal" : "") + (data.lane ? " " + data.lane : "")}>
+      <Handle type="target" position={targetPosition || Position.Top} className="topo-handle" />
+      <strong>{data.title}</strong>
+      <small>{data.note ? data.name + " · " + data.note : data.name}</small>
+      <Handle type="source" position={sourcePosition || Position.Bottom} className="topo-handle" />
+    </div>
+  );
+}
 
-const solid = [
-  "M 420 66 L 420 106",
-  "M 390 158 C 300 190, 220 200, 176 222",
-  "M 450 158 C 540 190, 620 200, 664 222",
-  "M 176 274 L 176 330",
-  "M 176 382 L 176 438",
-  "M 664 274 L 664 330",
-  "M 664 382 L 664 438",
-  "M 664 490 L 664 546",
-  "M 590 572 L 494 572",
-  "M 176 490 C 176 540, 300 572, 346 572",
-];
+const nodeTypes = { topology: TopologyNode };
+
+function FlowCanvas() {
+  const initial = useMemo(() => layoutGraph("TB"), []);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initial.nodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initial.edges);
+
+  const onLayout = useCallback(
+    (direction) => {
+      const next = layoutGraph(direction);
+      setNodes(next.nodes);
+      setEdges(next.edges);
+    },
+    [setNodes, setEdges],
+  );
+
+  return (
+    <div className="topo-canvas">
+      <div className="topo-toolbar">
+        <button type="button" onClick={() => onLayout("TB")}>
+          纵向排布
+        </button>
+        <button type="button" onClick={() => onLayout("LR")}>
+          横向排布
+        </button>
+      </div>
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        fitView
+        fitViewOptions={{ padding: 0.16 }}
+        minZoom={0.35}
+        maxZoom={1.6}
+        nodesDraggable
+        nodesConnectable={false}
+        elementsSelectable
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background gap={18} color="#d7e4dc" />
+        <MiniMap
+          pannable
+          zoomable
+          nodeColor={(node) =>
+            node.data?.kind === "terminal" ? "#176954" : "#ffffff"
+          }
+        />
+        <Controls showInteractive={false} />
+      </ReactFlow>
+    </div>
+  );
+}
 
 export function Graph() {
   return (
-    <figure className="graph">
+    <figure className="graph topology">
       <figcaption>
-        LangGraph 对话流程。标了「可结束」的节点可以直接进入结束。回答之后若还要计算，会回到规则。中断后从检查点回到当时的节点。
+        使用 <code>@xyflow/react</code> + <code>dagre</code> 自动排版，边关系对齐
+        <code>compile_graph()</code>。意图识别后进入 ReAct：LLM 决策/总结 ⇄ 工具调用；闲聊或 finish 直接结束。
       </figcaption>
-      <svg viewBox="0 0 840 630" role="img" aria-label="LangGraph 对话流程">
-        <defs>
-          <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-            <path d="M 0 1.2 L 8 5 L 0 8.8 z" fill="#176954" />
-          </marker>
-        </defs>
-        {solid.map((d) => <path key={d} d={d} className="edge" markerEnd="url(#arrow)" />)}
-        <path d="M 250 464 C 360 464, 480 248, 590 248" className="edge" markerEnd="url(#arrow)" />
-        <text className="label" x="250" y="196" textAnchor="middle">问答</text>
-        <text className="label" x="590" y="196" textAnchor="middle">计算</text>
-        <text className="label" x="420" y="360" textAnchor="middle">继续计算</text>
-        {nodes.map((node) => (
-          <g key={node.name}>
-            <rect x={node.x} y={node.y} width={W} height={H} rx="8" className={node.terminal ? "terminal" : "step"} />
-            <text x={node.cx} y={node.cy - 2} textAnchor="middle">{node.title}</text>
-            <text className="sub" x={node.cx} y={node.cy + 16} textAnchor="middle">{node.note ? node.name + " · " + node.note : node.name}</text>
-          </g>
-        ))}
-      </svg>
+      <ReactFlowProvider>
+        <FlowCanvas />
+      </ReactFlowProvider>
     </figure>
   );
 }

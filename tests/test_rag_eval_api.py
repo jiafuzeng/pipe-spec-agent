@@ -7,7 +7,7 @@ from unittest.mock import patch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.rag.retrieval import RemoteReranker
+from app.knowledge.retrieval import RemoteReranker
 from app.server.routes import evaluations
 from ragEval.retrieval import EvalError
 

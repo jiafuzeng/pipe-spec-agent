@@ -25,7 +25,7 @@ class IngestionTests(unittest.TestCase):
         self.assertGreater(len(items), 500)
 
     def test_markdown_chunks_match_source_page(self):
-        from app.rag.pipeline import index_nodes
+        from app.knowledge.ingestion import index_nodes
 
         markdown = (ROOT / "data/document.md").read_text()
         parsed = json.loads((ROOT / "data/document.json").read_bytes())
@@ -78,7 +78,7 @@ class IngestionTests(unittest.TestCase):
 
         from llama_index.core.embeddings import MockEmbedding
 
-        from app.rag.pipeline import index_nodes
+        from app.knowledge.ingestion import index_nodes
         from app.knowledge.source import STRATEGIES
 
         text = "\n\n".join(
@@ -94,7 +94,7 @@ class IngestionTests(unittest.TestCase):
                     "embedding_profile_id": "ollama:bge-m3",
                 }
                 with patch(
-                    "app.rag.pipeline.model", return_value=MockEmbedding(embed_dim=8)
+                    "app.knowledge.ingestion.model", return_value=MockEmbedding(embed_dim=8)
                 ):
                     nodes = index_nodes(source, Path(tmp), meta)
                 self.assertGreater(len(nodes), 0, strategy)

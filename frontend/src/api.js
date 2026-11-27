@@ -1,13 +1,10 @@
 export const examples = [
-  "编制目的和适用范围是什么？",
-  "解释 CCTV、QV、声纳，并比较适用条件。",
-  "结构性和功能性普查的周期是多少？哪些情况应缩短？",
-  "比较 CCTV、QV、声纳、人员进入和潜水的现场条件、安全、效率及缺陷识别能力。",
-  "声纳能否单独判定结构性缺陷？何时检查检查井，查哪些项目？",
-  "DN800 污水管，埋深 4.5 m，水位 60%，积泥较厚，次干道且不能停水降水，应如何检测？",
-  "说明 RI 与 K 的分档，固定其余参数，画出 K=0、3、6、10 的 RI 曲线。",
-  "帮我算一下这条管道的修复指数 RI。",
-  "DN1200，主干道 K=6，管龄 35 年，土质流砂，两处重度错口各 5 分，间距 1.2 m。计算 RI，并画 T=0、6、8、10 的曲线。",
+  "CJJ 181—2012 的编制目的与适用范围是什么？",
+  "CCTV、QV、声纳三种检测方式的官方术语定义分别是什么？各自的适用条件有何差异？",
+  "管道结构性缺陷与功能性缺陷的普查周期分别是多久？哪些情形下应缩短检测周期？",
+  "从适用管径与水位条件、可识别缺陷类型、检测效率与安全风险、对现场配合的要求四个维度，列表对比 CCTV、QV、声纳、人工下井、潜水五种检测方式，并给出选择结论。",
+  "声纳检测为何不能单独作为结构性缺陷的判定依据？检查井检测应安排在管道检测之前还是之后？检查井的核心检查项目有哪些？",
+  "场景分析与方案规划：某 DN800 混凝土污水管，埋深约 4.5 m，管内水位约 60%，积泥较厚，位于城市次干道，现场不具备停水降水条件。请 Agent 自主规划检测方案：先判断信息是否充分并追问缺失条件，再给出推荐的检测方式与设备组合、检测顺序、安全措施及选择理由，均标注规程依据。",
 ];
 export const api = "/api/v1/knowledge";
 export const offline = location.protocol === "file:";
@@ -56,8 +53,14 @@ export async function streamTurn(session, message, onEvent, subject = "default")
       buffer = buffer.slice(end + 2);
       const type = lines.find((line) => line.startsWith("event: "));
       const data = lines.find((line) => line.startsWith("data: "));
-      if (type && data)
-        onEvent({ type: type.slice(7), data: JSON.parse(data.slice(6)) });
+      if (type && data) {
+        const event = { type: type.slice(7), data: JSON.parse(data.slice(6)) };
+        onEvent(event);
+        // Let React paint partial answers instead of batching a whole burst.
+        if (event.type === "answer" && event.data?.partial === true) {
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
+      }
     }
     if (done) return true;
   }

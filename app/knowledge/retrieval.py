@@ -9,7 +9,7 @@ from functools import lru_cache
 
 import httpx
 
-from app.rag.pipeline import client, model
+from app.knowledge.ingestion import client, model
 
 
 def terms(text):
@@ -111,6 +111,17 @@ def search(root, registry, query, limit=5):
     return search_indexes(root, registry.active(), query, limit, review_status="approved")
 
 
+def search_clauses(query: str, top_k: int = 5) -> dict:
+    """进程内召回已发布规程条款。"""
+    from app.knowledge.registry import Registry, knowledge_root
+
+    root = knowledge_root()
+    registry = Registry(root)
+    if not registry.active():
+        return {"evidence": []}
+    return {"evidence": search(root, registry, query, max(1, min(top_k, 20)))}
+
+
 def search_indexes(root, indexes, query, limit, *, review_status):
     from rank_bm25 import BM25Okapi
 
@@ -177,6 +188,7 @@ def search_indexes(root, indexes, query, limit, *, review_status):
                     docmind_layout_ids=meta.get("docmind_layout_ids"),
                     page_pdf=meta.get("page_pdf"),
                     page_printed=None,
+                    document_name=config.get("original_filename") or config.get("title") or "",
                     source_hash=row["source"],
                     review_status=review_status,
                     job_id=row["id"],

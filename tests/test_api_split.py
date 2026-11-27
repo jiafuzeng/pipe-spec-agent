@@ -1,11 +1,12 @@
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from app.rag.pipeline import client
+from app.knowledge.ingestion import client
 from app.knowledge.registry import Registry
 from rag.web import API, app
 
@@ -13,6 +14,17 @@ from rag.web import API, app
 class ApiSplitTests(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(app)
+
+    def test_parallel_chroma_open_reuses_one_client(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+
+            def open_once():
+                return client(root)
+
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                first, second = list(pool.map(lambda _: open_once(), (0, 1)))
+        self.assertIs(first, second)
 
     def test_chunk_strategies_are_listed(self):
         body = self.client.get("/api/v1/knowledge/limits").json()

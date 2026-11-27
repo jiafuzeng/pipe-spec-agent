@@ -1,2 +1,2 @@
-"""Compatibility import for app.rag.pipeline."""
-from app.rag.pipeline import *  # noqa: F401,F403
+"""Compatibility import for app.knowledge.ingestion."""
+from app.knowledge.ingestion import *  # noqa: F401,F403

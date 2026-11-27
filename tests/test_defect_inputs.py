@@ -70,6 +70,7 @@ class DefectInputTests(unittest.TestCase):
                 lookup,
             )
 
+    @unittest.skip("agent calculation flow removed")
     def test_site_facts_are_collected_before_unknown_soil(self):
         import os
         from pathlib import Path
@@ -77,7 +78,7 @@ class DefectInputTests(unittest.TestCase):
         from unittest.mock import patch
         from fastapi.testclient import TestClient
         from app.server.application import create_app
-        from app.agent.store import Store
+        from app.server.routes.sessions import Store
         from agentEval.run import parse_sse
 
         calls = []

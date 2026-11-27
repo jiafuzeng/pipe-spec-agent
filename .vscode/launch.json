@@ -44,6 +44,51 @@
       }
     },
     {
+      "name": "MCP（单独）",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pipe_assessment_mcp",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "MCP_HOST": "127.0.0.1",
+        "MCP_PORT": "8001"
+      },
+      "preLaunchTask": "释放调试端口",
+      "justMyCode": true
+    },
+    {
+      "name": "API（单独）",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["main:app", "--host", "127.0.0.1", "--port", "8000"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "MCP_URL": "http://127.0.0.1:8001/mcp"
+      },
+      "preLaunchTask": "释放调试端口",
+      "justMyCode": true
+    },
+    {
+      "name": "前端（单独）",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "cwd": "${workspaceFolder}/frontend",
+      "preLaunchTask": "释放调试端口",
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "http://127\\.0\\.0\\.1:5173",
+        "uriFormat": "http://127.0.0.1:5173"
+      }
+    },
+    {
       "name": "当前文件",
       "type": "debugpy",
       "request": "launch",
@@ -77,6 +122,7 @@
     {
       "name": "启动工作台",
       "configurations": ["MCP", "API", "前端"],
+      "preLaunchTask": "释放调试端口",
       "stopAll": true
     }
   ]

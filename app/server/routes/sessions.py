@@ -1,18 +1,227 @@
 import asyncio
 import json
-import re
+import logging
+import sqlite3
 import uuid
+from datetime import datetime, timezone
+from pathlib import Path
 from weakref import WeakValueDictionary
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response, StreamingResponse
+from langgraph.store.sqlite import SqliteStore
 from pydantic import BaseModel, Field
 
-from app.agent.store import Store
-from app.agent.workflow import MEMORY_LIMIT, MEMORY_NAMESPACE, Turn, get_graph, memory_view
-from app.integrations.mcp_client import fetch_artifact
+from app.agent.workflow import get_graph
 
 router = APIRouter()
+log = logging.getLogger(__name__)
+
+
+def _now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+class Store:
+    """Session / run / event persistence on LangGraph SqliteStore."""
+
+    def __init__(self, path=None):
+        from app.settings import agent_db
+
+        self.path = Path(path or agent_db())
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self._conn = sqlite3.connect(
+            str(self.path), check_same_thread=False, isolation_level=None
+        )
+        self._db = SqliteStore(self._conn)
+        self._db.setup()
+
+    def close(self):
+        self._conn.close()
+
+    def create(self):
+        sid, created = uuid.uuid4().hex, _now()
+        self._db.put(
+            ("app", "sessions"),
+            sid,
+            {
+                "created_at": created,
+                "title": None,
+                "last_message": None,
+                "last_activity_at": None,
+            },
+        )
+        return dict(session_id=sid, created_at=created, state="ready")
+
+    def list_sessions(self):
+        rows = []
+        for item in self._db.search(("app", "sessions"), limit=1000):
+            value = item.value or {}
+            if not value.get("last_message"):
+                continue
+            rows.append(
+                dict(
+                    session_id=item.key,
+                    title=value.get("title"),
+                    last_message=value.get("last_message"),
+                    last_activity_at=value.get("last_activity_at")
+                    or value.get("created_at"),
+                )
+            )
+        rows.sort(key=lambda row: row["last_activity_at"] or "", reverse=True)
+        return rows
+
+    def rename(self, sid, title):
+        title = title.strip()
+        item = self._db.get(("app", "sessions"), sid)
+        if item is None:
+            return None
+        value = dict(item.value or {})
+        value["title"] = title
+        self._db.put(("app", "sessions"), sid, value)
+        return dict(session_id=sid, title=title)
+
+    def delete(self, sid):
+        if self._db.get(("app", "sessions"), sid) is None:
+            return False
+        for run in self._db.search(("app", "runs"), filter={"sid": sid}, limit=1000):
+            for event in self._db.search(("app", "events", run.key), limit=10000):
+                self._db.delete(("app", "events", run.key), event.key)
+            self._db.delete(("app", "runs"), run.key)
+        for subject in self._db.search(("app", "subjects", sid), limit=1000):
+            self._db.delete(("app", "subjects", sid), subject.key)
+        for turn in self._db.search(("app", "turns", sid), limit=10000):
+            self._db.delete(("app", "turns", sid), turn.key)
+        self._db.delete(("app", "sessions"), sid)
+        return True
+
+    def session(self, sid):
+        item = self._db.get(("app", "sessions"), sid)
+        if item is None:
+            return None
+        turns = sorted(
+            self._db.search(("app", "turns", sid), limit=10000),
+            key=lambda row: (row.value or {}).get("created_at") or row.key,
+        )
+        messages = [
+            dict(
+                turn_id=turn.key,
+                run_id=(turn.value or {}).get("run"),
+                subject_id=(turn.value or {}).get("subject") or "default",
+                text=(turn.value or {}).get("message") or "",
+                role="user",
+            )
+            for turn in turns
+        ]
+        last = messages[-1] if messages else None
+        return dict(
+            session_id=sid,
+            created_at=(item.value or {}).get("created_at"),
+            state="ready",
+            subjects={},
+            messages=messages,
+            active_run_id=last["run_id"] if last else None,
+            subject_id=last["subject_id"] if last else "default",
+        )
+
+    def subject(self, sid, subject):
+        item = self._db.get(("app", "subjects", sid), subject)
+        if item is None:
+            return {}, 0
+        value = item.value or {}
+        return dict(value.get("body") or {}), int(value.get("version") or 0)
+
+    def start(self, sid, subject, run, turn, query, state, version):
+        self._db.put(
+            ("app", "runs"),
+            run,
+            {
+                "sid": sid,
+                "subject": subject,
+                "status": "running",
+                "last_error": None,
+                "turn": turn,
+                "message": query,
+                "event_seq": -1,
+            },
+        )
+        created = _now()
+        self._db.put(
+            ("app", "turns", sid),
+            turn,
+            {"run": run, "message": query, "created_at": created, "subject": subject},
+        )
+        session = self._db.get(("app", "sessions"), sid)
+        if session is not None:
+            value = dict(session.value or {})
+            value["last_message"] = query
+            value["last_activity_at"] = created
+            self._db.put(("app", "sessions"), sid, value)
+        if self._db.get(("app", "subjects", sid), subject) is None:
+            self._db.put(("app", "subjects", sid), subject, {"body": {}, "version": 0})
+        self._save(sid, subject, state, version)
+
+    def _save(self, sid, subject, state, version):
+        item = self._db.get(("app", "subjects", sid), subject)
+        current = int((item.value or {}).get("version") or 0) if item else 0
+        if current != version:
+            raise RuntimeError("管段状态已更新")
+        self._db.put(
+            ("app", "subjects", sid),
+            subject,
+            {"body": state, "version": version + 1},
+        )
+
+    def event(self, run, turn, kind, data, status, state, version):
+        item = self._db.get(("app", "runs"), run)
+        if item is None:
+            raise RuntimeError("run 不存在")
+        info = item.value or {}
+        seq = int(info.get("event_seq") or -1) + 1
+        payload = dict(
+            data,
+            type=kind,
+            run_id=run,
+            turn_id=turn,
+            event_id=seq,
+            session_id=info.get("sid"),
+            subject_id=info.get("subject"),
+        )
+        payload.setdefault("step_id", f"{turn}-{seq}")
+        self._db.put(("app", "events", run), f"{seq:08d}", payload)
+        info = dict(info)
+        info["event_seq"] = seq
+        info["status"] = status
+        if kind == "error":
+            info["last_error"] = data.get("code")
+        self._db.put(("app", "runs"), run, info)
+        self._save(info["sid"], info["subject"], state, version)
+        return payload
+
+    def events(self, run, after=-1):
+        rows = sorted(
+            self._db.search(("app", "events", run), limit=10000),
+            key=lambda item: item.key,
+        )
+        return [
+            item.value
+            for item in rows
+            if int((item.value or {}).get("event_id", -1)) > after
+        ]
+
+    def run(self, run):
+        item = self._db.get(("app", "runs"), run)
+        if item is None:
+            return None
+        info = item.value or {}
+        return dict(
+            run_id=run,
+            session_id=info.get("sid"),
+            subject_id=info.get("subject"),
+            status=info.get("status"),
+            last_error=info.get("last_error"),
+            event_count=int(info.get("event_seq") or -1) + 1,
+        )
 
 
 class Message(BaseModel):
@@ -24,111 +233,61 @@ class SessionTitle(BaseModel):
     title: str = Field(min_length=1, max_length=80)
 
 
-def resumes_task(state, query):
-    pending = state.get("pending")
-    if not pending:
-        return False
-    if pending == "plan":
-        return bool(
-            re.search(
-                r"管径|DN\s*\d|水位|流速|管段长度|管长|探头|竣工资料", query, re.I
-            )
-            and not re.search(r"计算|对比|比较|另外一段", query)
-        )
-    return bool(
-        re.search(r"[A-Za-z]+\s*[=:：]|继续|重试|[FKET]\s*(为|是)", query)
-        or (state.get("observations") and re.search("土质|确认|米|间距", query))
-        or any(
-            f.get("label_zh") and f["label_zh"] in query
-            for f in state.get("missing", [])
-        )
-    )
-
-
 class Execution:
-    def __init__(self, store, tool_client=None):
-        self.tool_client = tool_client
+    def __init__(self, store):
         self.store = store
         self.locks = WeakValueDictionary()
-        self.tasks = set()
 
-    def submit(self, sid, subject, query, recovering=None):
-        queue = asyncio.Queue()
+    async def stream(self, sid, subject, query):
+        """Run one turn; persist LangGraph custom events and yield them for SSE."""
         lock = self.locks.setdefault((sid, subject), asyncio.Lock())
-
-        async def run():
-            async with lock:
-                try:
-                    state, version = self.store.subject(sid, subject)
-                    if recovering:
-                        run_id, turn_id = recovering["run"], recovering["turn"]
-                    else:
-                        continuing = resumes_task(state, query)
-                        run_id = state["run"] if continuing else uuid.uuid4().hex
-                        turn_id = uuid.uuid4().hex
-                        if not continuing:
-                            state.update(
-                                pending=None,
-                                rule_version=None,
-                                curve=None,
-                                missing=[],
-                                compare_base=False,
-                            )
-                        state.update(run=run_id, continuing=continuing)
-                        self.store.start(
-                            sid, subject, run_id, turn_id, query, state, version
-                        )
-                        version += 1
-                    ctx = Turn(
-                        self.store,
-                        run_id,
-                        turn_id,
-                        state,
-                        version,
-                        queue,
-                        self.tool_client,
-                        session_id=sid,
+        async with lock:
+            state, version = self.store.subject(sid, subject)
+            run_id = uuid.uuid4().hex
+            turn_id = uuid.uuid4().hex
+            state.update(run=run_id, subject_id=subject)
+            self.store.start(sid, subject, run_id, turn_id, query, state, version)
+            version += 1
+            graph = get_graph()
+            config = (
+                {"configurable": {"thread_id": sid}} if graph.checkpointer else None
+            )
+            try:
+                stream = graph.astream(
+                    {"query": query},
+                    config=config,
+                    stream_mode="custom",
+                )
+                async for chunk in stream:
+                    if not isinstance(chunk, dict) or not chunk.get("type"):
+                        continue
+                    kind = chunk["type"]
+                    status = chunk.get("status") or "running"
+                    data = {
+                        key: value
+                        for key, value in chunk.items()
+                        if key not in {"type", "status"}
+                    }
+                    event = self.store.event(
+                        run_id, turn_id, kind, data, status, state, version
                     )
-                    state["subject_id"] = subject
-                    try:
-                        graph = get_graph()
-                        payload = (
-                            None
-                            if recovering
-                            else {
-                                "query": query,
-                                "resume_at": "plan",
-                                "active_subject_id": subject,
-                            }
-                        )
-                        if graph.checkpointer:
-                            await graph.ainvoke(
-                                payload,
-                                {"configurable": {"thread_id": sid}},
-                                context=ctx,
-                            )
-                        else:
-                            await graph.ainvoke(payload or {"query": query}, context=ctx)
-                    except Exception:
-                        import logging
-
-                        logging.getLogger(__name__).exception("Turn %s failed", turn_id)
-                        ctx.emit(
-                            "error",
-                            dict(
-                                code="TOOL_UNAVAILABLE",
-                                text="执行中断，可重新提交。",
-                                retryable=True,
-                            ),
-                            "failed",
-                        )
-                finally:
-                    queue.put_nowait(None)
-
-        task = asyncio.create_task(run())
-        self.tasks.add(task)
-        task.add_done_callback(self.tasks.discard)
-        return queue
+                    version += 1
+                    yield event
+            except Exception:
+                log.exception("Turn %s failed", turn_id)
+                yield self.store.event(
+                    run_id,
+                    turn_id,
+                    "error",
+                    dict(
+                        code="TOOL_UNAVAILABLE",
+                        text="执行中断，可重新提交。",
+                        retryable=True,
+                    ),
+                    "failed",
+                    state,
+                    version,
+                )
 
 
 def service(request):
@@ -167,29 +326,6 @@ async def get_session(sid: str, request: Request):
     session = service(request).store.session(sid)
     if not session:
         raise HTTPException(404, "会话不存在")
-    session["short_term"] = {
-        "active_subject_id": None,
-        "confirmed": [],
-        "pending": [],
-        "recent_values": [],
-    }
-    graph = get_graph()
-    if graph.checkpointer:
-        snap = await graph.aget_state({"configurable": {"thread_id": sid}})
-        values = snap.values or {}
-        session["short_term"] = {
-            "active_subject_id": values.get("active_subject_id"),
-            "confirmed": values.get("confirmed") or [],
-            "pending": values.get("pending") or [],
-            "recent_values": values.get("recent_values") or [],
-        }
-    memory_store = getattr(request.app.state, "memory_store", None)
-    found = (
-        await memory_store.asearch(MEMORY_NAMESPACE, limit=MEMORY_LIMIT)
-        if memory_store is not None
-        else []
-    )
-    session["long_term"] = [memory_view(item) for item in found]
     return session
 
 
@@ -209,24 +345,18 @@ async def events(run_id: str, request: Request, after_event_id: int = -1):
     )
 
 
-@router.get("/api/v1/artifacts/{resource_id}")
-async def artifact(resource_id: str):
-    if not re.fullmatch(r"[0-9a-f]{64}", resource_id):
-        raise HTTPException(404, "资源不存在")
-    content = await fetch_artifact(resource_id)
-    return Response(content, media_type="image/png")
-
-
 @router.post("/api/v1/sessions/{sid}/turns")
 async def turn(sid: str, body: Message, request: Request):
     await get_session(sid, request)
     query = body.message.strip()
     if not query:
         raise HTTPException(422, "请输入问题")
-    queue = service(request).submit(sid, body.subject_id, query)
 
     async def receive():
-        while (event := await queue.get()) is not None:
-            yield f"event: {event['type']}\ndata: {json.dumps(event, ensure_ascii=False)}\n\n"
+        async for event in service(request).stream(sid, body.subject_id, query):
+            yield (
+                f"event: {event['type']}\n"
+                f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+            )
 
     return StreamingResponse(receive(), media_type="text/event-stream")

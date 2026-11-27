@@ -9,50 +9,9 @@ const names = [
   "现场适用条件",
   "声纳与检查井",
   "检测方案分析",
-  "RI–K 曲线",
-  "修复指数追问",
-  "综合评估",
 ];
-function Slots({ data, send, disabled }) {
-  const [values, set] = useState({ ...data.confirmed });
-  const fields = [
-    ...Object.keys(data.confirmed || {})
-      .filter((key) => !data.fields.some((f) => f.name === key))
-      .map((name) => ({ name })),
-    ...data.fields,
-  ];
-  return (
-    <form
-      className="slots"
-      onSubmit={(e) => {
-        e.preventDefault();
-        send(fields.map((f) => f.name + "=" + values[f.name]).join(" "));
-      }}
-    >
-      <h4>确认计算参数</h4>
-      {fields.map((f) => (
-        <label key={f.name}>
-          {f.label_zh || f.name} {f.unit}
-          <input
-            required
-            value={values[f.name] ?? ""}
-            onChange={(e) => set({ ...values, [f.name]: e.target.value })}
-          />
-          <small>
-            {f.description} {(f.evidence_refs || []).join("、")}
-          </small>
-        </label>
-      ))}
-      <button disabled={disabled}>确认并继续</button>
-    </form>
-  );
-}
 const toolNames = {
   search_clauses: "检索条款",
-  get_calculation_schema: "读取计算规则",
-  calculate_index: "计算指数",
-  plot_curve: "绘制曲线",
-  lookup_defect_score: "查缺陷分值",
 };
 
 function thinkLine(event) {
@@ -68,55 +27,280 @@ function thinkLine(event) {
   return name + query + (data.summary ? " · " + data.summary : " · " + status);
 }
 
-function reducedMotion() {
-  return (
-    typeof matchMedia === "function" &&
-    matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-}
-
-function Think({ lines, live, animate, onDone }) {
-  const text = lines.join("\n");
-  const played = React.useRef(animate);
-  const [n, setN] = React.useState(0);
-  const typing = played.current && !reducedMotion() && (live || n < text.length);
-  React.useEffect(() => {
-    if (!played.current || reducedMotion()) {
-      onDone(!live);
+function Think({ lines, live }) {
+  const [open, setOpen] = useState(live);
+  const [typed, setTyped] = useState("");
+  const [lineIndex, setLineIndex] = useState(0);
+  const body = useRef(null);
+  const cursor = useRef({ index: -1, text: "" });
+  const reduceMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  useEffect(() => {
+    setOpen(live);
+  }, [live]);
+  useEffect(() => {
+    if (!live || reduceMotion) {
+      const last = Math.max(0, lines.length - 1);
+      cursor.current = { index: last, text: lines[last] || "" };
+      setLineIndex(last);
+      setTyped(cursor.current.text);
       return;
     }
-    onDone(!live && n >= text.length);
-  }, [live, n, text, onDone]);
-  React.useEffect(() => {
-    if (!played.current || reducedMotion() || n >= text.length) return;
-    const step = text.length > 48 ? 2 : 1;
-    const id = setTimeout(() => setN((v) => Math.min(text.length, v + step)), 24);
-    return () => clearTimeout(id);
-  }, [n, text]);
-  if (!played.current) {
-    return (
-      <div className="think done">
-        <p className="think-label">思考过程</p>
-        {lines.map((line, i) => (
-          <p key={i}>{line}</p>
-        ))}
-      </div>
-    );
-  }
+    if (!lines.length) {
+      cursor.current = { index: -1, text: "" };
+      setLineIndex(0);
+      setTyped("");
+      return;
+    }
+    const target = lines.length - 1;
+    const text = lines[target] || "";
+    const chars = [...text];
+    let count = 0;
+    if (cursor.current.index === target && text.startsWith(cursor.current.text)) {
+      count = [...cursor.current.text].length;
+    } else {
+      cursor.current = { index: target, text: "" };
+      setTyped("");
+    }
+    setLineIndex(target);
+    if (count >= chars.length) {
+      cursor.current = { index: target, text };
+      setTyped(text);
+      return;
+    }
+    const timer = window.setInterval(() => {
+      count += 1;
+      const next = chars.slice(0, count).join("");
+      cursor.current = { index: target, text: next };
+      setTyped(next);
+      if (count >= chars.length) window.clearInterval(timer);
+    }, 28);
+    return () => window.clearInterval(timer);
+  }, [live, lines, reduceMotion]);
+  useEffect(() => {
+    if (!live || !body.current) return;
+    body.current.scrollTop = body.current.scrollHeight;
+  }, [live, typed, lineIndex, lines]);
+  const shown = !live
+    ? lines
+    : lines.length === 0
+      ? []
+      : lines.slice(0, lineIndex).concat([typed]);
   return (
-    <div className={typing ? "think" : "think done"}>
-      <p className="think-label" role="status">
-        {typing ? "思考中" : "思考过程"}
-      </p>
-      <p className="think-body">
-        {text.slice(0, reducedMotion() ? text.length : n)}
-        {typing && <i className="caret" />}
-      </p>
+    <div className={(open ? "think open" : "think done") + (live ? " live" : "")}>
+      <button
+        type="button"
+        className="think-label"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        think
+      </button>
+      {open && (
+        <ol className="think-body" ref={body} aria-live={live ? "polite" : undefined}>
+          {shown.map((line, i) => (
+            <li key={i}>
+              {line}
+              {live && i === shown.length - 1 && <i className="caret" />}
+            </li>
+          ))}
+          {live && shown.length === 0 && (
+            <li>
+              <i className="caret" />
+            </li>
+          )}
+        </ol>
+      )}
     </div>
   );
 }
 
-function Turn({ turn, send, disabled, live }) {
+function evidenceOf(turn) {
+  return (turn?.events || []).filter((e) => e.type === "evidence").map((e) => e.data);
+}
+
+const chunkCache = new Map();
+const nameCache = new Map();
+
+async function documentName(item) {
+  if (item.document_name) return item.document_name;
+  if (!item.job_id) return "";
+  if (!nameCache.has(item.job_id)) {
+    nameCache.set(
+      item.job_id,
+      fetch(api + "/imports/" + item.job_id)
+        .then((response) => (response.ok ? response.json() : null))
+        .then((job) => job?.config?.original_filename || job?.config?.title || "")
+        .catch(() => ""),
+    );
+  }
+  return nameCache.get(item.job_id);
+}
+
+async function chunkText(item) {
+  if (item.chunk) return item.chunk;
+  if (!item.job_id || !item.source_hash) return item.quote || "";
+  if (!chunkCache.has(item.job_id)) {
+    chunkCache.set(
+      item.job_id,
+      (async () => {
+        const rows = [];
+        for (let offset = 0; offset < 500; offset += 100) {
+          const response = await fetch(
+            api +
+              "/documents/" +
+              item.source_hash +
+              "/chunks?job_id=" +
+              item.job_id +
+              "&offset=" +
+              offset +
+              "&limit=100",
+          );
+          const part = response.ok ? await response.json() : [];
+          if (!Array.isArray(part) || !part.length) break;
+          rows.push(...part);
+          if (part.length < 100) break;
+        }
+        return rows;
+      })().catch(() => []),
+    );
+  }
+  const rows = await chunkCache.get(item.job_id);
+  const needle = (item.quote || "").replace(/\s+/g, "").slice(0, 48);
+  const hit = rows.find(
+    (row) => needle && (row.text || "").replace(/\s+/g, "").includes(needle),
+  );
+  return hit?.text || item.quote || "";
+}
+
+const SOURCE_KEY = "pipe.source";
+function savedSourceWidth() {
+  const saved = Number(localStorage.getItem(SOURCE_KEY));
+  return saved >= 280 && saved <= 720 ? saved : 380;
+}
+function clampSource(value) {
+  return Math.min(720, Math.max(280, value));
+}
+function SourcePane({ item, items, index, onPick, onClose, width, onResize, onNudge }) {
+  const [name, setName] = useState(item.document_name || "");
+  const [chunk, setChunk] = useState(item.chunk || "");
+  useEffect(() => {
+    let live = true;
+    setName(item.document_name || "");
+    setChunk(item.chunk || "");
+    documentName(item).then((value) => {
+      if (live && value) setName(value);
+    });
+    chunkText(item).then((value) => {
+      if (live) setChunk(value || item.quote || "");
+    });
+    return () => {
+      live = false;
+    };
+  }, [item]);
+  const page =
+    item.page_pdf == null ? "页码未知" : "PDF 第 " + item.page_pdf + " 页";
+  return (
+    <aside className="source-pane" aria-label="检索原文">
+      <button
+        type="button"
+        className="source-grip"
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="调整原文栏宽度"
+        aria-valuemin={280}
+        aria-valuemax={720}
+        aria-valuenow={width}
+        onPointerDown={onResize}
+        onKeyDown={(event) => {
+          const step = event.key === "ArrowLeft" ? 16 : event.key === "ArrowRight" ? -16 : 0;
+          if (!step) return;
+          event.preventDefault();
+          onNudge(step);
+        }}
+      />
+      <div className="source-body">
+      <header>
+        <div>
+          <p className="source-kicker">检索原文</p>
+          <strong>条款 {item.clause_no}</strong>
+        </div>
+        <button type="button" className="icon-btn" aria-label="关闭" onClick={onClose}>
+          ×
+        </button>
+      </header>
+      {items.length > 1 && (
+        <div className="source-switch">
+          {items.map((row, i) => (
+            <button
+              type="button"
+              key={row.evidence_id || i}
+              aria-current={i === index ? "true" : undefined}
+              onClick={() => onPick(i)}
+            >
+              {row.clause_no}
+            </button>
+          ))}
+        </div>
+      )}
+      <p className="source-meta">
+        <span>{name || "未记录文档名"}</span>
+        <span>{page}</span>
+      </p>
+      <div className="source-chunk">{(chunk || item.quote || "没有检索文本").trim()}</div>
+      </div>
+    </aside>
+  );
+}
+
+function citeText(item) {
+  let text = String(item.quote || "").replace(/\s+/g, " ").trim();
+  const clause = String(item.clause_no || "");
+  if (clause && text.startsWith(clause)) text = text.slice(clause.length).trim();
+  return text;
+}
+function citeHead(text) {
+  const chars = [...text];
+  if (chars.length <= 8) return text;
+  return chars.slice(0, 8).join("") + "…";
+}
+function CiteCard({ item, current, onOpen }) {
+  const text = citeText(item);
+  const preview = citeHead(text);
+  const page = item.page_pdf == null ? "" : "第 " + item.page_pdf + " 页";
+  return (
+    <button
+      type="button"
+      className="citation"
+      aria-current={current ? "true" : undefined}
+      aria-label={"条款 " + item.clause_no + (text ? "，" + text : "")}
+      onClick={(event) => {
+        event.stopPropagation();
+        onOpen();
+      }}
+    >
+      <span className="cite-no">〔{item.clause_no}〕</span>
+      {preview && <span className="cite-quote">{preview}</span>}
+      {page && <span className="cite-page">{page}</span>}
+    </button>
+  );
+}
+function eventPayload(event) {
+  return event?.data?.type ? event.data : event?.data || event || {};
+}
+function isPartialAnswer(event) {
+  return event?.type === "answer" && eventPayload(event).partial === true;
+}
+function isFinalAnswer(event) {
+  return event?.type === "answer" && eventPayload(event).partial !== true;
+}
+function turnFinished(events) {
+  return events.some(
+    (event) => event.type === "error" || isFinalAnswer(event),
+  );
+}
+function Turn({ turn, live, cited, selected, onCite, onSelect }) {
   const evidence = turn.events
     .filter((e) => e.type === "evidence")
     .map((e) => e.data);
@@ -124,144 +308,78 @@ function Turn({ turn, send, disabled, live }) {
     ["tool_call", "plan_step"].includes(e.type),
   );
   const thoughts = trace.map(thinkLine).filter(Boolean);
-  const [shown, setShown] = useState(!turn.fresh);
-  useEffect(() => {
-    if (!live && thoughts.length === 0) setShown(true);
-  }, [live, thoughts.length]);
-  function linked(text) {
-    return String(text)
-      .split(/(〔[^〕]+〕)/)
-      .map((part, i) => {
-        const index = evidence.findIndex(
-          (e) => "〔" + e.clause_no + "〕" === part,
-        );
-        return index < 0 ? (
-          part
-        ) : (
-          <button
-            className="citation"
-            key={i}
-            onClick={() => {
-              const d = document.getElementById(turn.id + "-e" + index);
-              if (d) {
-                d.open = true;
-                d.scrollIntoView({ block: "nearest" });
-              }
-            }}
-          >
-            {part}
-          </button>
-        );
-      });
+  const answers = turn.events.filter((e) => e.type === "answer");
+  const latestAnswer = answers[answers.length - 1];
+  function answerText(text) {
+    return String(text).replace(/\s*〔[^〕]+〕/g, "").replace(/[ \t]{2,}/g, " ").trim();
+  }
+  function citedIndexes(text) {
+    const seen = new Set();
+    const indexes = [];
+    for (const match of String(text).matchAll(/〔([^〕]+)〕/g)) {
+      const index = evidence.findIndex((item) => item.clause_no === match[1]);
+      if (index < 0 || seen.has(index)) continue;
+      seen.add(index);
+      indexes.push(index);
+    }
+    return indexes;
+  }
+  function citeButton(index) {
+    const item = evidence[index];
+    return (
+      <CiteCard
+        key={item.evidence_id || item.clause_no}
+        item={item}
+        current={cited === index}
+        onOpen={() => onCite(index)}
+      />
+    );
+  }
+  function renderAnswer(data, key) {
+    const raw =
+      data.text ||
+      data.message ||
+      data.code ||
+      JSON.stringify(data, null, 2);
+    const partial = data.partial === true;
+    const cites = !partial ? citedIndexes(raw) : [];
+    return (
+      <div className={"reply-block" + (partial ? " streaming" : "")} key={key}>
+        <div
+          className={"reply" + (selected ? " selected" : "")}
+          onClick={() => !partial && evidence.length && onSelect(0)}
+        >
+          {answerText(raw)}
+          {partial && <i className="caret" />}
+        </div>
+        {cites.length > 0 && (
+          <div className="reply-cites">
+            <span className="cite-label">原文引用</span>
+            {cites.map(citeButton)}
+          </div>
+        )}
+      </div>
+    );
   }
   return (
     <article className="turn">
       <h3>{turn.question}</h3>
-      {(live || thoughts.length > 0) && (
-        <Think lines={thoughts} live={live} animate={Boolean(turn.fresh)} onDone={setShown} />
-      )}
-      {shown && !live && turn.events.map(({ type, data }, i) => {
-        if (type === "clarification_required")
-          return <Slots key={i} data={data} send={send} disabled={disabled} />;
-        if (type === "answer" || type === "error")
+      {(live || thoughts.length > 0) && <Think lines={thoughts} live={live} />}
+      {latestAnswer && renderAnswer(eventPayload(latestAnswer), "answer")}
+      {!live &&
+        turn.events.map(({ type, data }, i) => {
+          if (type !== "error") return null;
+          const raw =
+            data.text ||
+            data.message ||
+            data.code ||
+            JSON.stringify(data, null, 2);
           return (
-            <div className={type === "error" ? "warning" : "reply"} key={i}>
-              {linked(
-                data.text ||
-                  data.message ||
-                  data.code ||
-                  JSON.stringify(data, null, 2),
-              )}
+            <div className="reply-block" key={i}>
+              <div className="warning">{answerText(raw)}</div>
             </div>
           );
-        if (type === "chart") {
-          const metadata = trace.find((e) => e.data?.tool === "plot_curve" && e.data.output?.resource_id === data.resource_id)?.data?.output || data;
-          const imageUrl = "/api/v1/artifacts/" + data.resource_id;
-          const [axis, metric] = (
-            metadata.csv?.split(/\r?\n/)[0] || "自变量,指数"
-          ).split(",");
-          const pointCall = trace.find(
-            (e) => e.data?.output?.result_id === metadata.result_ids?.[0],
-          )?.data;
-          return (
-            <figure key={i}>
-              <img
-                src={imageUrl}
-                alt={metric + " 随 " + axis + " 变化的曲线"}
-              />
-              <figcaption>
-                {pointCall?.inputs && (
-                  <>
-                    规则版本 {pointCall.inputs.rule_version} · 固定参数{" "}
-                    {Object.entries(pointCall.inputs.parameters || {})
-                      .filter(([k]) => k !== axis)
-                      .map(([k, v]) => k + "=" + v)
-                      .join("，")}
-                  </>
-                )}
-              </figcaption>
-              <table>
-                <thead>
-                  <tr>
-                    <th>{axis}</th>
-                    <th>{metric}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(metadata.points || []).map(([x, y], j) => (
-                    <tr key={j}>
-                      <td>{x}</td>
-                      <td>{y}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <a
-                download="curve.png"
-                href={imageUrl}
-              >
-                下载 PNG
-              </a>
-              　
-              <a
-                download="curve.csv"
-                href={
-                  "data:text/csv;charset=utf-8," + encodeURIComponent(metadata.csv || "")
-                }
-              >
-                下载 CSV
-              </a>
-            </figure>
-          );
-        }
-        return null;
-      })}
-      {evidence.map((e, i) => (
-        <details id={turn.id + "-e" + i} key={i}>
-          <summary>
-            条款 {e.clause_no} · PDF 第 {e.page_pdf} 页
-          </summary>
-          <p>{e.quote}</p>
-          <small>
-            {e.chapter} · {e.source_hash}
-          </small>
-          <a
-            target="_blank"
-            rel="noreferrer"
-            href={
-              api +
-              "/documents/" +
-              e.source_hash +
-              "/original?job_id=" +
-              e.job_id +
-              "#page=" +
-              e.page_pdf
-            }
-          >
-            打开原文 ↗
-          </a>
-        </details>
-      ))}
+        })}
     </article>
   );
 }
@@ -298,13 +416,44 @@ export function Chat() {
     [sessions, setSessions] = useState([]),
     [input, setInput] = useState(""),
     [busy, setBusy] = useState(false),
-    [subjects, setSubjects] = useState({}),
     [status, setStatus] = useState(""),
     [editing, setEditing] = useState(null),
     [draft, setDraft] = useState(""),
     [pendingDelete, setPendingDelete] = useState(null),
     [menu, setMenu] = useState(null),
-    [more, setMore] = useState(false);
+    [more, setMore] = useState(false),
+    [source, setSource] = useState(null),
+    [sourceWidth, setSourceWidth] = useState(savedSourceWidth);
+  function resizeSource(event) {
+    if (event.button !== 0) return;
+    const grip = event.currentTarget;
+    try {
+      grip.setPointerCapture(event.pointerId);
+    } catch {
+      /* 指针已被释放时仍按移动距离计算 */
+    }
+    const startX = event.clientX;
+    const start = sourceWidth;
+    function move(nextEvent) {
+      setSourceWidth(clampSource(start - (nextEvent.clientX - startX)));
+    }
+    function up(nextEvent) {
+      const next = clampSource(start - (nextEvent.clientX - startX));
+      setSourceWidth(next);
+      localStorage.setItem(SOURCE_KEY, String(next));
+      grip.removeEventListener("pointermove", move);
+      grip.removeEventListener("pointerup", up);
+    }
+    grip.addEventListener("pointermove", move);
+    grip.addEventListener("pointerup", up);
+  }
+  function nudgeSource(step) {
+    setSourceWidth((value) => {
+      const next = clampSource(value + step);
+      localStorage.setItem(SOURCE_KEY, String(next));
+      return next;
+    });
+  }
   const subject = chat.subject || "default";
   const editor = useRef(null),
     sending = useRef(false);
@@ -313,7 +462,6 @@ export function Chat() {
     const snapshot = await request("/api/v1/sessions/" + session);
     rememberSession(session);
     setChat({ session, turns: [], subject: snapshot.subject_id || "default" });
-    setSubjects(snapshot.subjects || {});
     const messages = snapshot.messages || [];
     const cursors = new Map();
     const restored = messages.map((m) => ({
@@ -392,9 +540,17 @@ export function Chat() {
     const event = (e) =>
       setChat((prev) => ({
         ...prev,
-        turns: prev.turns.map((t) =>
-          t.id === id ? { ...t, events: [...t.events, e] } : t,
-        ),
+        turns: prev.turns.map((t) => {
+          if (t.id !== id) return t;
+          if (isPartialAnswer(e)) {
+            const events = [...t.events];
+            const last = events[events.length - 1];
+            if (isPartialAnswer(last)) events[events.length - 1] = e;
+            else events.push(e);
+            return { ...t, events };
+          }
+          return { ...t, events: [...t.events, e] };
+        }),
       }));
     setChat((prev) => ({
       ...prev,
@@ -410,8 +566,6 @@ export function Chat() {
           rememberSession(session);
         }
         if (await streamTurn(session, message, event, subject)) {
-          const snapshot = await request("/api/v1/sessions/" + session);
-          setSubjects(snapshot.subjects);
           try {
             setSessions(await listSessions());
             setStatus("");
@@ -439,9 +593,9 @@ export function Chat() {
     showChat();
     setChat({ session: null, turns: [] });
     rememberSession(null);
-    setSubjects({});
     setStatus("");
     setInput("");
+    setSource(null);
     editor.current.focus();
   }
   function sessionLabel(item) {
@@ -519,6 +673,7 @@ export function Chat() {
   }
   async function chooseSession(session) {
     showChat();
+    setSource(null);
     if (busy || session === chat.session) return;
     setBusy(true);
     try {
@@ -530,20 +685,20 @@ export function Chat() {
       setBusy(false);
     }
   }
-  const confirmed = Object.entries(subjects[subject]?.confirmed || {});
-  const prompts = [0, 1, 4, 7];
+  const prompts = [0, 1, 4];
   const shown = more ? sessions : sessions.slice(0, 5);
   const dock = document.getElementById("session-dock");
+  const fresh = document.getElementById("new-session");
   const history = (
     <nav
-      className={more ? "session-list open" : "session-list"}
-      aria-label="最近会话"
+      className="session-list"
+      aria-label="历史会话"
       onContextMenu={(event) => {
         if (event.target.closest(".session-row, input, textarea")) return;
         openMenu(event, null);
       }}
     >
-      <small>最近</small>
+      <small>历史会话</small>
       {sessions.length === 0 && <p className="history-empty">还没有历史会话</p>}
       <div className="session-scroll">
       {shown.map((item) => (
@@ -590,8 +745,24 @@ export function Chat() {
       )}
     </nav>
   );
+  let active = null;
+  if (source && source.turnId) {
+    const turn = chat.turns.find((item) => item.id === source.turnId);
+    const items = evidenceOf(turn);
+    if (items[source.index]) active = { turn, items, index: source.index };
+  }
   return (
-    <div className={chat.turns.length ? "ask talking" : "ask"}>
+    <div
+      className={(chat.turns.length ? "ask talking" : "ask") + (active ? " has-source" : "")}
+      style={active ? { "--source": sourceWidth + "px" } : undefined}
+    >
+      {fresh && createPortal(
+        <button type="button" className="new-session" disabled={busy} onClick={reset}>
+          <span aria-hidden="true">＋</span>
+          新建会话
+        </button>,
+        fresh,
+      )}
       {dock && createPortal(history, dock)}
       {menu && createPortal(
         <div className="session-menu" role="menu" style={{ left: menu.x, top: menu.y }}>
@@ -604,7 +775,7 @@ export function Chat() {
               reset();
             }}
           >
-            新会话
+            新建会话
           </button>
           {menu.sessionId && (
             <>
@@ -639,7 +810,7 @@ export function Chat() {
       <div className="ask-col">
         {!chat.turns.length && (
           <div className="ask-hello">
-            <h1>规程问答，我帮你查</h1>
+            <h1>我帮你查</h1>
             <div className="examples">
               {names.map((name, i) => (
                 <button type="button" onClick={() => choose(i)} key={name}>
@@ -651,19 +822,15 @@ export function Chat() {
         )}
         {chat.turns.length > 0 && (
           <div className="thread" aria-live="polite">
-            <div className="thread-bar">
-              <strong>规程问答</strong>
-              <button type="button" disabled={busy} onClick={reset}>
-                新会话
-              </button>
-            </div>
             {chat.turns.map((t) => (
               <Turn
                 key={t.id}
                 turn={t}
-                send={send}
-                live={busy && !t.events.some((e) => ["answer", "error", "clarification_required", "chart"].includes(e.type))}
-                disabled={busy || offline || (t.subject || "default") !== subject || chat.turns.slice(chat.turns.indexOf(t) + 1).some((next) => (next.subject || "default") === subject)}
+                cited={active && active.turn.id === t.id ? active.index : -1}
+                selected={Boolean(active && active.turn.id === t.id)}
+                onCite={(index) => setSource({ turnId: t.id, index })}
+                onSelect={(index) => setSource({ turnId: t.id, index })}
+                live={busy && !turnFinished(t.events)}
               />
             ))}
           </div>
@@ -688,28 +855,10 @@ export function Chat() {
               )
                 send(input);
             }}
-            placeholder="今天帮你查什么？输入检测条件、条款号或 RI / MI 计算问题"
+            placeholder="今天帮你查什么？输入检测条件或条款号"
             maxLength={4000}
           />
           <div className="composer-foot">
-            <label>
-              管段
-              <input
-                aria-label="当前管段"
-                maxLength={128}
-                disabled={busy}
-                value={chat.subject ?? "default"}
-                list="pipe-subjects"
-                onChange={(e) =>
-                  setChat((prev) => ({ ...prev, subject: e.target.value }))
-                }
-              />
-            </label>
-            <datalist id="pipe-subjects">
-              {Object.keys(subjects).map((id) => (
-                <option key={id} value={id} />
-              ))}
-            </datalist>
             {input.length > 0 && <small>{input.length} / 4000</small>}
             <button
               className="primary"
@@ -720,14 +869,9 @@ export function Chat() {
             </button>
           </div>
         </form>
-        {(confirmed.length > 0 || status) && (
+        {status && (
           <div className="ask-meta">
-            {confirmed.map(([kind, slots]) => (
-              <span key={kind}>
-                {kind} · {Object.entries(slots).map(([k, v]) => k + "=" + v).join("，")}
-              </span>
-            ))}
-            {status && <span role="status">{status}</span>}
+            <span role="status">{status}</span>
           </div>
         )}
         {!chat.turns.length && (
@@ -740,6 +884,18 @@ export function Chat() {
           </div>
         )}
       </div>
+      {active && (
+        <SourcePane
+          item={active.items[active.index]}
+          items={active.items}
+          index={active.index}
+          onPick={(index) => setSource({ turnId: active.turn.id, index })}
+          onClose={() => setSource(null)}
+          width={sourceWidth}
+          onResize={resizeSource}
+          onNudge={nudgeSource}
+        />
+      )}
     </div>
   );
 }

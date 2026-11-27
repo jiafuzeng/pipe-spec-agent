@@ -19,7 +19,7 @@ from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 from starlette.concurrency import run_in_threadpool
 
-from app.rag.pipeline import PROFILES, build, client, index_nodes, model
+from app.knowledge.ingestion import PROFILES, build, client, index_nodes, model
 from app.knowledge.registry import Registry, knowledge_root
 from app.knowledge.source import (
     EDITION,

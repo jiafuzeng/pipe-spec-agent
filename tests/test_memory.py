@@ -12,7 +12,8 @@ from langgraph.store.sqlite.aio import AsyncSqliteStore
 
 from agentEval.fixture_tools import call_tool
 from agentEval.run import parse_sse
-from app.agent.workflow import REFUSAL, compile_graph
+from app.agent.answers import REFUSAL
+from app.agent.workflow import compile_graph
 
 
 def _env(tmp):
@@ -44,6 +45,9 @@ def _calc(events):
     )
 
 
+_SKIP_CALC = unittest.skip("agent calculation flow removed")
+
+
 class MemoryTests(unittest.TestCase):
     def test_app_opens_official_saver_and_store(self):
         from app.server.application import create_app
@@ -51,6 +55,7 @@ class MemoryTests(unittest.TestCase):
 
         self.assertFalse(Path("app/agent/memory.py").exists())
         self.assertFalse(Path("app/agent/checkpoint_store.py").exists())
+        self.assertFalse(Path("app/agent/store.py").exists())
         with (
             TemporaryDirectory() as tmp,
             patch.dict(os.environ, _env(tmp)),
@@ -67,21 +72,19 @@ class MemoryTests(unittest.TestCase):
             await graph.aupdate_state(
                 {"configurable": {"thread_id": "a"}},
                 {
-                    "resume_at": "end",
-                    "active_subject_id": "pipe-1",
-                    "confirmed": [{"name": "F", "value": "6", "subject_id": "pipe-1"}],
-                    "pending": ["E"],
-                    "recent_values": [{"name": "间距", "value": "2", "unit": "米"}],
+                    "query": "隔离校验",
+                    "intent": "qa",
                 },
                 as_node="__start__",
             )
             other = await graph.aget_state({"configurable": {"thread_id": "b"}})
-            self.assertFalse(other.values.get("confirmed"))
+            self.assertFalse(other.values.get("query"))
             same = await graph.aget_state({"configurable": {"thread_id": "a"}})
-            self.assertEqual(same.values["confirmed"][0]["value"], "6")
+            self.assertEqual(same.values["query"], "隔离校验")
 
         asyncio.run(run())
 
+    @_SKIP_CALC
     def test_same_thread_reuses_only_the_unchanged_values(self):
         from app.server.application import create_app
 
@@ -115,6 +118,7 @@ class MemoryTests(unittest.TestCase):
             self.assertEqual(unclear[-1]["type"], "clarification_required")
             self.assertNotIn("value", unclear[-1])
 
+    @_SKIP_CALC
     def test_new_session_does_not_inherit_and_restart_keeps_the_question(self):
         from app.server.application import create_app
 
@@ -142,6 +146,7 @@ class MemoryTests(unittest.TestCase):
                 events = api.get(f"/api/v1/runs/{run}/events").json()["events"]
                 self.assertFalse(any("value" in event for event in events))
 
+    @_SKIP_CALC
     def test_remember_writes_one_data_item_and_search_is_capped(self):
         from app.server.application import create_app
 
@@ -173,6 +178,7 @@ class MemoryTests(unittest.TestCase):
             self.assertIn("不是规程依据", recalled[-1]["text"])
             self.assertLessEqual(recalled[-1]["text"].count("已记住") + 1, 4)
 
+    @_SKIP_CALC
     def test_view_splits_short_and_long_term_and_forget_deletes_one_key(self):
         from app.server.application import create_app
 
@@ -207,6 +213,7 @@ class MemoryTests(unittest.TestCase):
             self.assertIn("当前对话正在用的", viewed[-1]["text"])
             self.assertIn("以后还会记得的", viewed[-1]["text"])
 
+    @_SKIP_CALC
     def test_memory_is_not_a_clause_and_rejected_value_is_not_calculated(self):
         from app.server.application import create_app
 

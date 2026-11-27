@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { request } from "./api.js";
-import { Graph } from "./Graph.jsx";
 
 function listed(value) {
   if (value == null) return "";
@@ -66,9 +65,8 @@ export function AgentEval() {
   const summary = report?.summary;
   return (
     <div className="eval-page">
-      <div className="crumb">知识库 / Agent 评测</div>
+      <div className="crumb">评测 / Agent 评测</div>
       <div className="pagehead"><h1>Agent 评测</h1></div>
-      <Graph />
       {error && <p className="warning" role="alert">{error}</p>}
       {!report && !error && <p role="status">正在读取评测报告…</p>}
       {report && <>

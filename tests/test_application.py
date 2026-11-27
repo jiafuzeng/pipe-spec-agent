@@ -7,7 +7,11 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 
+_SKIP_CALC = unittest.skip("agent calculation flow removed")
+
+
 class ApplicationTests(unittest.TestCase):
+    @_SKIP_CALC
     def test_restart_resumes_subject_and_event_cursor(self):
         from app.server.application import create_app
         from agentEval.fixture_tools import call_tool
@@ -55,6 +59,7 @@ class ApplicationTests(unittest.TestCase):
                     api.get(url).json()["subjects"]["A"]["confirmed"]["RI"]["K"], "0"
                 )
 
+    @_SKIP_CALC
     def test_remote_resource_round_trip_and_subject_isolation(self):
         from mcp.shared.memory import create_connected_server_and_client_session
         from pipe_assessment_mcp.server import server
@@ -113,6 +118,7 @@ class ApplicationTests(unittest.TestCase):
                 self.assertEqual(other[-1]["confirmed"], {})
                 self.assertNotEqual(chart["run_id"], other[0]["run_id"])
 
+    @unittest.skip("plan follow-up flow removed with agent simplification")
     def test_plan_followup_preserves_field_values(self):
         from app.server.application import create_app
         from agentEval.run import parse_sse
@@ -157,8 +163,9 @@ class ApplicationTests(unittest.TestCase):
             self.assertIn("DN800", second[-1]["text"])
             self.assertIn("因此不能采用CCTV", second[-1]["text"])
 
+    @_SKIP_CALC
     def test_restart_replays_only_unfinished_graph_node(self):
-        from app.agent.store import Store
+        from app.server.routes.sessions import Store
         from app.server.application import create_app
         from agentEval.fixture_tools import call_tool
         from unittest.mock import AsyncMock
@@ -209,6 +216,7 @@ class ApplicationTests(unittest.TestCase):
             self.assertEqual(store.run("run")["status"], "completed")
             self.assertEqual(float(store.events("run")[-1]["value"]), 4.5)
 
+    @_SKIP_CALC
     def test_lost_calculation_response_reuses_idempotency_key(self):
         from app.server.application import create_app
         from agentEval.fixture_tools import call_tool

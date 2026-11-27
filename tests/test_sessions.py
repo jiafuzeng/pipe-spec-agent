@@ -99,7 +99,7 @@ class SessionListTests(unittest.TestCase):
             self.assertNotIn("messages", listed[0])
 
     def test_opened_session_returns_every_question_in_order(self):
-        from app.agent.store import Store
+        from app.server.routes.sessions import Store
         from app.server.application import create_app
 
         with (
