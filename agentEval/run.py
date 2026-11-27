@@ -225,6 +225,81 @@ def score_turn(expect: dict, events: list[dict], prior_run_id: str | None) -> li
     return failures
 
 
+def observe_turn(turn, events, failures, action, rule_mode, versions):
+    expect = turn.get("expect") or {}
+    answers = [
+        e.get("text") for e in events if e.get("type") == "answer" and e.get("text")
+    ]
+    citations = [
+        {
+            "clause": e.get("clause_no"),
+            "page": e.get("page_pdf"),
+            "quote": e.get("quote"),
+        }
+        for e in events
+        if e.get("type") == "evidence" and e.get("clause_no")
+    ]
+    clar = next((e for e in events if e.get("type") == "clarification_required"), None)
+    results = []
+    for e in events:
+        if e.get("tool") != "calculate_index" or e.get("status") != "succeeded":
+            continue
+        output = e.get("output") or {}
+        results.append(
+            {
+                "type": output.get("calculation_type"),
+                "parameters": output.get("parameters"),
+                "value": output.get("value"),
+            }
+        )
+    charts = [
+        {
+            "points": len((e.get("output") or {}).get("points") or []),
+            "resource_id": (e.get("output") or {}).get("resource_id"),
+        }
+        for e in events
+        if e.get("tool") == "plot_curve" and e.get("status") == "succeeded"
+    ]
+    kept = {
+        key: expect[key]
+        for key in (
+            "action",
+            "tool_calls",
+            "citations_any_of",
+            "missing_parameters",
+            "missing_parameter_groups",
+            "results",
+            "refusal_text",
+            "events_include",
+            "chart",
+        )
+        if key in expect
+    }
+    return {
+        "message": turn.get("message"),
+        "expect": kept,
+        "action": action,
+        "tools": count_tools(events),
+        "citations": citations,
+        "answer": "\n".join(answers),
+        "clarification": None
+        if clar is None
+        else {
+            "fields": [
+                field.get("label_zh") or field.get("name")
+                for field in clar.get("fields") or []
+            ],
+            "groups": clar.get("groups") or clar.get("missing_parameter_groups") or [],
+        },
+        "results": results,
+        "charts": charts,
+        "rule_mode": rule_mode,
+        "rule_versions": versions,
+        "passed": not failures,
+        "failures": failures,
+    }
+
+
 def prepare_env(case: dict) -> dict:
     """Return env overrides for this case; caller applies/restores."""
     pre = case.get("precondition") or {}
@@ -382,18 +457,14 @@ def evaluate_cases(cases, client):
                     )
                     ok = not failures
                     case_pass = case_pass and ok
-                    turn_results.append(
-                        {
-                            "index": index,
-                            "rule_mode": "fixture"
-                            if os.getenv("RULE_FIXTURE") == "1"
-                            else "published",
-                            "rule_versions": versions,
-                            "passed": ok,
-                            "failures": failures,
-                            "action": infer_action(events),
-                        }
+                    rule_mode = (
+                        "fixture" if os.getenv("RULE_FIXTURE") == "1" else "published"
                     )
+                    observed = observe_turn(
+                        turn, events, failures, infer_action(events), rule_mode, versions
+                    )
+                    observed["index"] = index
+                    turn_results.append(observed)
                     expect = turn.get("expect") or {}
                     if expect.get("action"):
                         action_n += 1
@@ -408,7 +479,12 @@ def evaluate_cases(cases, client):
                         if not any(re.match(r"\w+ expected ", f) for f in failures):
                             tool_ok += 1
                 results.append(
-                    {"id": case["id"], "passed": case_pass, "turns": turn_results}
+                    {
+                        "id": case["id"],
+                        "origin": case.get("origin"),
+                        "passed": case_pass,
+                        "turns": turn_results,
+                    }
                 )
         finally:
             restore_env(prev)

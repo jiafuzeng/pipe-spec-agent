@@ -1,0 +1,88 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "MCP",
+      "type": "shell",
+      "command": "set -a && [ -f .env ] && . ./.env; set +a; exec .venv/bin/pipe-assessment-mcp",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "MCP_HOST": "127.0.0.1",
+          "MCP_PORT": "8001"
+        }
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "mcp",
+        "pattern": { "regexp": "^.*$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Uvicorn running on"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "workbench"
+      }
+    },
+    {
+      "label": "API",
+      "type": "shell",
+      "command": "set -a && [ -f .env ] && . ./.env; set +a; exec .venv/bin/uvicorn main:app --host 127.0.0.1 --port 8000 --workers 1",
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "MCP_URL": "http://127.0.0.1:8001/mcp"
+        }
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "api",
+        "pattern": { "regexp": "^.*$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "Uvicorn running on"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "workbench"
+      }
+    },
+    {
+      "label": "前端",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "frontend",
+        "pattern": { "regexp": "^.*$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "http://127\\.0\\.0\\.1:5173"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "workbench"
+      }
+    },
+    {
+      "label": "启动工作台",
+      "dependsOn": ["MCP", "API", "前端"],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "group": "none"
+    }
+  ]
+}

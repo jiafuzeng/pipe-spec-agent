@@ -80,53 +80,80 @@ def evaluate(case, hits, hashes):
     ])
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    jobs = parser.add_mutually_exclusive_group()
-    jobs.add_argument("--hybrid-job", help="对指定已构建索引运行多路召回和相关性重排")
-    parser.add_argument("--output", type=Path, help="成功后写入完整 JSON 报告")
-    jobs.add_argument("--bm25-job", help="对指定任务的现有切片做离线 BM25 对照")
-    inputs = parser.add_mutually_exclusive_group()
-    inputs.add_argument("input_file", nargs="?", help="验证集 JSON 路径")
-    inputs.add_argument("--dataset", help="验证集路径，兼容 validation 和 baseline 别名")
-    args = parser.parse_args()
-    load_dotenv()
+class EvalError(ValueError):
+    pass
+
+
+def dataset_path(dataset=None):
     aliases = {"validation": "rag_validation.json", "baseline": "retrieval_cases.json"}
-    if args.input_file:
-        dataset = Path(args.input_file)
-    elif args.dataset and args.dataset not in aliases:
-        dataset = Path(args.dataset)
+    if dataset and dataset not in aliases:
+        path = Path(dataset)
     else:
-        dataset = Path(__file__).with_name(aliases[args.dataset or "validation"])
-    if not dataset.is_file():
-        parser.error(f"验证集不存在：{dataset}")
-    data = json.loads(dataset.read_text(encoding="utf-8"))
+        path = Path(__file__).with_name(aliases[dataset or "validation"])
+    if not path.is_file():
+        raise EvalError(f"验证集不存在：{path}")
+    return path
+
+
+def _usable_job(registry, hashes, job_id=None):
+    states = {"built_pending_review", "active_approved", "superseded"}
+    jobs = [j for j in registry.jobs() if j["state"] in states and j["source"] in hashes]
+    if job_id:
+        job = next((j for j in registry.jobs() if j["id"] == job_id), None)
+        if not job or job["state"] not in states:
+            raise EvalError("请选择已经完成构建的索引")
+        if job["source"] not in hashes:
+            raise EvalError("索引与验证集来源不一致")
+        return job
+    active = [j for j in jobs if j["state"] == "active_approved"]
+    if active:
+        return active[0]
+    if jobs:
+        return jobs[0]
+    raise EvalError("没有可评测的索引，请先导入并构建规程")
+
+
+def build_report(mode, *, dataset=None, job_id=None, automatic=False):
+    """Score the validation set. mode is ``bm25`` or ``hybrid``."""
+    if mode not in {"bm25", "hybrid"}:
+        raise EvalError("未知评测方式")
+    load_dotenv()
+    path = dataset_path(dataset)
+    data = json.loads(path.read_text(encoding="utf-8"))
     root = knowledge_root()
     registry = Registry(root)
+    hashes = data["source_sha256"]
     active = [row["id"] for row in registry.active()]
-    if args.bm25_job:
-        mode = "offline_bm25"
-        retrieve = offline_retriever(root, args.bm25_job, data["source_sha256"])
+    evaluated = job_id
+    if mode == "bm25":
+        job = _usable_job(registry, hashes, job_id) if automatic or job_id else None
+        if job is None:
+            raise EvalError("请指定已构建索引")
+        evaluated = job["id"]
+        label = "offline_bm25"
+        retrieve = offline_retriever(root, evaluated, hashes)
+        reranker = None
     else:
-        if args.hybrid_job:
-            job = next((j for j in registry.jobs() if j["id"] == args.hybrid_job), None)
-            if not job or job["state"] not in {"built_pending_review", "active_approved", "superseded"}:
-                parser.error("请选择已经完成构建的索引")
-            if job["source"] not in data["source_sha256"]:
-                parser.error("索引与验证集来源不一致")
+        if not os.getenv("RERANKER_MODEL") and not os.getenv("RERANKER_BASE_URL"):
+            raise EvalError("请设置 RERANKER_MODEL 或配置远程重排服务")
+        reranker = os.getenv("RERANKER_MODEL", "qwen3-rerank")
+        published = [row["id"] for row in registry.active() if row["source"] in hashes]
+        if job_id or (automatic and not published):
+            job = _usable_job(registry, hashes, job_id)
+            evaluated = job["id"]
             status = "pending_review" if job["state"] == "built_pending_review" else "approved"
-            mode = "offline_hybrid"
-            def retrieve(query):
+            label = "offline_hybrid"
+
+            def retrieve(query, job=job, status=status):
                 return search_indexes(root, [job], query, 5, review_status=status)
         else:
             if not active:
-                parser.error("没有已发布索引；可用 --hybrid-job 对指定索引做离线混合评测")
-            mode = "production"
+                raise EvalError("没有已发布索引；可用 --hybrid-job 对指定索引做离线混合评测")
+            label = "production"
+
             def retrieve(query):
                 return search(root, registry, query, limit=5)
-        if not os.getenv("RERANKER_MODEL") and not os.getenv("RERANKER_BASE_URL"):
-            parser.error("请设置 RERANKER_MODEL 或配置远程重排服务")
-    results = [evaluate(c, retrieve(c["query"]), data["source_sha256"]) for c in data["cases"]]
+    results = [evaluate(c, retrieve(c["query"]), hashes) for c in data["cases"]]
     positive = [r["matches"] for r in results if r["matches"]]
     ranks = [[m["rank"] for m in group if m["rank"]] for group in positive]
     summary = {
@@ -138,18 +165,49 @@ def main():
         "all_citations_at_5": sum(all(m["citation_rank"] for m in g) for g in positive),
         "negative_queries_with_candidates": sum(bool(r["top5"]) for r in results if not r["matches"]),
     }
-    report = json.dumps(dict(mode=mode,
-                          dataset=dataset.name,
-                          reranker_model=None if args.bm25_job else os.getenv("RERANKER_MODEL", "qwen3-rerank"),
-                          scoring="evidence_score 为 Top 5 正文证据覆盖率（百分制）；score 另要求条款/表号及 PDF 页序同时正确。库外题两项均为 null。",
-                          active_jobs=active, evaluated_job=args.bm25_job or args.hybrid_job, summary=summary,
-                          results=results), ensure_ascii=False, indent=2)
+    return dict(
+        mode=label,
+        dataset=path.name,
+        reranker_model=reranker,
+        scoring="evidence_score 为 Top 5 正文证据覆盖率（百分制）；score 另要求条款/表号及 PDF 页序同时正确。库外题两项均为 null。",
+        active_jobs=active,
+        evaluated_job=evaluated,
+        summary=summary,
+        results=results,
+    )
+
+
+def write_report(report, output: Path):
+    text = json.dumps(report, ensure_ascii=False, indent=2)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with NamedTemporaryFile(mode="w", dir=output.parent, delete=False, encoding="utf-8") as f:
+        f.write(text + "\n")
+    os.replace(f.name, output)
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    jobs = parser.add_mutually_exclusive_group()
+    jobs.add_argument("--hybrid-job", help="对指定已构建索引运行多路召回和相关性重排")
+    parser.add_argument("--output", type=Path, help="成功后写入完整 JSON 报告")
+    jobs.add_argument("--bm25-job", help="对指定任务的现有切片做离线 BM25 对照")
+    inputs = parser.add_mutually_exclusive_group()
+    inputs.add_argument("input_file", nargs="?", help="验证集 JSON 路径")
+    inputs.add_argument("--dataset", help="验证集路径，兼容 validation 和 baseline 别名")
+    args = parser.parse_args()
+    try:
+        report = build_report(
+            "bm25" if args.bm25_job else "hybrid",
+            dataset=args.input_file or args.dataset,
+            job_id=args.bm25_job or args.hybrid_job,
+        )
+    except EvalError as exc:
+        parser.error(str(exc))
+    text = json.dumps(report, ensure_ascii=False, indent=2)
     if args.output:
-        with NamedTemporaryFile(mode="w", dir=args.output.parent, delete=False, encoding="utf-8") as f:
-            f.write(report + "\n")
-        os.replace(f.name, args.output)
+        write_report(report, args.output)
     else:
-        print(report)
+        print(text)
 
 
 if __name__ == "__main__":

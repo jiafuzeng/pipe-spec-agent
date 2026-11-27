@@ -10,6 +10,10 @@
       "cwd": "${workspaceFolder}",
       "python": "${workspaceFolder}/.venv/bin/python",
       "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "MCP_HOST": "127.0.0.1",
+        "MCP_PORT": "8001"
+      },
       "justMyCode": true
     },
     {
@@ -22,6 +26,9 @@
       "cwd": "${workspaceFolder}",
       "python": "${workspaceFolder}/.venv/bin/python",
       "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "MCP_URL": "http://127.0.0.1:8001/mcp"
+      },
       "justMyCode": true
     },
     {

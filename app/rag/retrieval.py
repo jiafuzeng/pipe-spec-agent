@@ -75,7 +75,7 @@ class RemoteReranker:
             raise RuntimeError(f"重排请求失败（HTTP {response.status_code}）")
         payload = response.json()
         rows = payload.get("results", payload.get("data"))
-        if not isinstance(rows, list) or len(rows) != len(documents):
+        if not isinstance(rows, list) or not rows or len(rows) > len(documents):
             raise ValueError("重排接口未返回全部候选")
         scores = [None] * len(documents)
         for row in rows:
@@ -86,6 +86,12 @@ class RemoteReranker:
             if type(score) not in (int, float) or not math.isfinite(score):
                 raise ValueError("重排接口返回无效分数")
             scores[index] = score
+        # Providers such as qwen3-rerank score every document but only return their top hits.
+        missing = [index for index, score in enumerate(scores) if score is None]
+        if missing:
+            floor = min(score for score in scores if score is not None) - 1
+            for index in missing:
+                scores[index] = floor
         return scores
 
 

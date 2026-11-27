@@ -39,18 +39,18 @@ function CaseResult({ row }) {
 export function RagEval() {
   const [report, setReport] = useState(null);
   const [error, setError] = useState("");
-  const [mode, setMode] = useState("hybrid");
   const [filter, setFilter] = useState("all");
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
     setReport(null);
     setError("");
-    request("/api/v1/evaluations/rag?mode=" + mode, { signal: controller.signal })
+    const refresh = revision ? "&refresh=1" : "";
+    request("/api/v1/evaluations/rag?mode=hybrid" + refresh, { signal: controller.signal })
       .then((data) => { if (!controller.signal.aborted) setReport(data); })
       .catch((e) => { if (!controller.signal.aborted) setError(e.message); });
     return () => controller.abort();
-  }, [revision, mode]);
+  }, [revision]);
 
   const rows = report?.results.filter((row) =>
     filter === "all" || (filter === "outside" ? row.score == null :
@@ -62,14 +62,11 @@ export function RagEval() {
       <div className="pagehead"><h1>RAG 检索评测</h1>
         <button onClick={() => setRevision(n => n + 1)}>刷新报告</button>
       </div>
-      <label>检索方式 <select value={mode} onChange={e => setMode(e.target.value)}>
-        <option value="hybrid">多路召回 + 相关性重排</option>
-        <option value="bm25">BM25 基线</option>
-      </select></label>
+      <p>检索方式：多路召回 + 相关性重排</p>
       {error && <p className="warning" role="alert">{error}</p>}
-      {!report && !error && <p role="status">正在读取评测报告…</p>}
+      {!report && !error && <p role="status">{revision ? "正在重新评测…" : "正在生成评测报告…"}</p>}
       {report && <>
-        <p>{report.mode === "offline_bm25" ? "离线 BM25" : report.mode === "offline_hybrid" ? "指定索引混合检索" : "已发布索引混合检索"}{report.reranker_model && " · " + report.reranker_model} · {report.dataset} · 共 {report.results.length} 题</p>
+        <p>{report.mode === "production" ? "已发布索引混合检索" : "指定索引混合检索"}{report.reranker_model && " · " + report.reranker_model} · {report.dataset} · 共 {report.results.length} 题</p>
         <div className="eval-metrics">
           {[
             ["正文全部命中", summary.all_evidence_at_5 + " / " + summary.answerable],

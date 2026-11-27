@@ -27,8 +27,7 @@ const chunks = [
   },
 ];
 window.fetch = async (url, opts = {}) => {
-  if (url.endsWith("/evaluations/rag?mode=hybrid")) return Response.json({detail:"暂无混合报告"}, {status:404});
-  if (url.endsWith("/evaluations/rag?mode=bm25")) return Response.json(JSON.parse(readFileSync("../ragEval/bm25_scores.json", "utf8")));
+  if (url.includes("/evaluations/rag")) return Response.json(JSON.parse(readFileSync("../ragEval/hybrid_scores.json", "utf8")));
   if (url.endsWith("/limits"))
     return Response.json({
       chunk_strategies: [
@@ -110,9 +109,10 @@ await tick();
 assert.match(doc.querySelector("textarea").value, /修复指数/);
 assert.equal(messages.length, 0);
 doc.querySelector(".composer .primary").click();
-await tick();
+for (let i = 0; i < 40 && !doc.querySelector(".reply"); i++) await tick();
 assert.equal(messages.length, 1);
 assert.match(doc.querySelector(".reply").textContent, /测试回答/);
+assert.match(doc.querySelector(".think").textContent, /检索条款/);
 window.location.hash = "import";
 window.dispatchEvent(new window.Event("hashchange"));
 await tick();
@@ -190,11 +190,8 @@ console.log(
 window.location.hash = "ragEval";
 window.dispatchEvent(new window.Event("hashchange"));
 await tick();
-assert.match(doc.querySelector(".eval-page").textContent, /暂无混合报告/);
-const mode = doc.querySelector(".eval-page select");
-mode.value = "bm25";
-mode.dispatchEvent(new window.Event("change", { bubbles: true }));
-await tick();
+assert.match(doc.querySelector(".eval-page").textContent, /多路召回 \+ 相关性重排/);
+assert.equal(doc.querySelector("option[value=bm25]"), null);
 assert.equal(doc.querySelectorAll(".eval-case").length, 30);
 assert.match(doc.querySelector(".eval-case").textContent, /正文 100 分 · 引用 100 分/);
 const filter = doc.querySelector("[aria-label=筛选评测题目]");

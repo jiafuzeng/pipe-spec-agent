@@ -1,22 +1,43 @@
+import threading
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
 router = APIRouter()
+_report_lock = threading.Lock()
+
+
+def _scores(mode: str) -> Path:
+    return Path(__file__).resolve().parents[3] / "ragEval" / f"{mode}_scores.json"
+
+
+def _ensure_report(mode: str, refresh: bool):
+    path = _scores(mode)
+    if path.is_file() and not refresh:
+        return path
+    with _report_lock:
+        if path.is_file() and not refresh:
+            return path
+        from ragEval.retrieval import EvalError, build_report, write_report
+
+        try:
+            write_report(build_report(mode, automatic=True), path)
+        except EvalError as exc:
+            raise HTTPException(409, str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(503, f"评测失败：{exc}") from exc
+    return path
 
 
 @router.get("/api/v1/knowledge/rag-eval")
 @router.get("/api/v1/evaluations/rag")
-def rag_eval(mode: str = "bm25"):
-    if mode not in {"bm25", "hybrid"}:
-        raise HTTPException(422, "未知评测方式")
-    path = Path(__file__).resolve().parents[3] / "ragEval" / f"{mode}_scores.json"
-    if not path.is_file():
-        raise HTTPException(
-            404, f"暂无评测报告，请先运行 ragEval/retrieval.py 生成 {mode}_scores.json"
-        )
+def rag_eval(mode: str = "hybrid", refresh: bool = False):
+    if mode != "hybrid":
+        raise HTTPException(422, "只支持多路召回")
     return FileResponse(
-        path, media_type="application/json", headers={"Cache-Control": "no-store"}
+        _ensure_report(mode, refresh),
+        media_type="application/json",
+        headers={"Cache-Control": "no-store"},
     )
 
 

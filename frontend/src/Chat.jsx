@@ -46,13 +46,87 @@ function Slots({ data, send, disabled }) {
     </form>
   );
 }
-function Turn({ turn, send, disabled }) {
+const toolNames = {
+  search_clauses: "检索条款",
+  get_calculation_schema: "读取计算规则",
+  calculate_index: "计算指数",
+  plot_curve: "绘制曲线",
+  lookup_defect_score: "查缺陷分值",
+};
+
+function thinkLine(event) {
+  const data = event.data;
+  if (event.type === "plan_step") {
+    const questions = data.questions?.filter(Boolean);
+    return data.text + (questions?.length ? "：" + questions.join("、") : "");
+  }
+  if (event.type !== "tool_call") return "";
+  const name = toolNames[data.tool] || data.tool;
+  const query = data.inputs?.query ? "「" + data.inputs.query + "」" : "";
+  const status = data.status === "succeeded" ? "完成" : data.status === "failed" ? "失败" : "进行中";
+  return name + query + (data.summary ? " · " + data.summary : " · " + status);
+}
+
+function reducedMotion() {
+  return (
+    typeof matchMedia === "function" &&
+    matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+function Think({ lines, live, animate, onDone }) {
+  const text = lines.join("\n");
+  const played = React.useRef(animate);
+  const [n, setN] = React.useState(0);
+  const typing = played.current && !reducedMotion() && (live || n < text.length);
+  React.useEffect(() => {
+    if (!played.current || reducedMotion()) {
+      onDone(!live);
+      return;
+    }
+    onDone(!live && n >= text.length);
+  }, [live, n, text, onDone]);
+  React.useEffect(() => {
+    if (!played.current || reducedMotion() || n >= text.length) return;
+    const step = text.length > 48 ? 2 : 1;
+    const id = setTimeout(() => setN((v) => Math.min(text.length, v + step)), 24);
+    return () => clearTimeout(id);
+  }, [n, text]);
+  if (!played.current) {
+    return (
+      <div className="think done">
+        <p className="think-label">思考过程</p>
+        {lines.map((line, i) => (
+          <p key={i}>{line}</p>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className={typing ? "think" : "think done"}>
+      <p className="think-label" role="status">
+        {typing ? "思考中" : "思考过程"}
+      </p>
+      <p className="think-body">
+        {text.slice(0, reducedMotion() ? text.length : n)}
+        {typing && <i className="caret" />}
+      </p>
+    </div>
+  );
+}
+
+function Turn({ turn, send, disabled, live }) {
   const evidence = turn.events
     .filter((e) => e.type === "evidence")
     .map((e) => e.data);
   const trace = turn.events.filter((e) =>
     ["tool_call", "plan_step"].includes(e.type),
   );
+  const thoughts = trace.map(thinkLine).filter(Boolean);
+  const [shown, setShown] = useState(!turn.fresh);
+  useEffect(() => {
+    if (!live && thoughts.length === 0) setShown(true);
+  }, [live, thoughts.length]);
   function linked(text) {
     return String(text)
       .split(/(〔[^〕]+〕)/)
@@ -80,28 +154,12 @@ function Turn({ turn, send, disabled }) {
       });
   }
   return (
-    <article className="panel turn">
+    <article className="turn">
       <h3>{turn.question}</h3>
-      {trace.length > 0 && (
-        <div className="timeline">
-          <h4>执行记录</h4>
-          {trace.map(({ type, data }, i) => (
-            <details key={i}>
-              <summary>
-                {data.text || data.tool}{" "}
-                <small>
-                  {data.status}
-                  {data.elapsed_ms != null
-                    ? " · " + data.elapsed_ms + " ms"
-                    : ""}
-                </small>
-              </summary>
-              <pre>{JSON.stringify(data, null, 2)}</pre>
-            </details>
-          ))}
-        </div>
+      {(live || thoughts.length > 0) && (
+        <Think lines={thoughts} live={live} animate={Boolean(turn.fresh)} onDone={setShown} />
       )}
-      {turn.events.map(({ type, data }, i) => {
+      {shown && !live && turn.events.map(({ type, data }, i) => {
         if (type === "clarification_required")
           return <Slots key={i} data={data} send={send} disabled={disabled} />;
         if (type === "answer" || type === "error")
@@ -264,7 +322,13 @@ export function Chat() {
     sending = useRef(false);
   useEffect(() => {
     try {
-      sessionStorage.setItem("pipe.chat", JSON.stringify(chat));
+      sessionStorage.setItem(
+        "pipe.chat",
+        JSON.stringify({
+          ...chat,
+          turns: chat.turns.map(({ fresh, ...turn }) => turn),
+        }),
+      );
     } catch {
       sessionStorage.removeItem("pipe.chat");
     }
@@ -289,7 +353,7 @@ export function Chat() {
       }));
     setChat((prev) => ({
       ...prev,
-      turns: [...prev.turns, { id, question: message, subject, events: [] }],
+      turns: [...prev.turns, { id, question: message, subject, events: [], fresh: true }],
     }));
     setInput("");
     try {
@@ -320,107 +384,121 @@ export function Chat() {
       setBusy(false);
     }
   }
+  function reset() {
+    setChat({ session: null, turns: [] });
+    setSubjects({});
+    setStatus("");
+    setInput("");
+    editor.current.focus();
+  }
+  const confirmed = Object.entries(subjects[subject]?.confirmed || {});
+  const prompts = [0, 1, 4, 7];
   return (
-    <>
-      <div className="pagehead">
-        <div>
-          <div className="crumb">工作台 / 规程问答</div>
-          <h1>规程问答</h1>
-        </div>
-        <button
-          disabled={busy}
-          onClick={() => {
-            setChat({ session: null, turns: [] });
-            setSubjects({});
-            setStatus("");
-            setInput("");
-            editor.current.focus();
-          }}
-        >
-          ＋ 新建会话
-        </button>
-      </div>
-      <div className="hero">
-        <div>
-          <span className="standard">CJJ 181—2012</span>
-          <h2>
-            城镇排水管道
-            <br />
-            检测与评估技术规程
-          </h2>
-        </div>
-        <div className="pipe-art" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </div>
-      </div>
-      <div className="chatgrid">
-        <div>
-          <form
-            className="panel composer"
-            onSubmit={(e) => {
-              e.preventDefault();
-              send(input);
-            }}
-          >
-            <h3>向规程提问</h3>
-            <textarea
-              ref={editor}
-              aria-label="问题"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (
-                  !e.nativeEvent.isComposing &&
-                  (e.metaKey || e.ctrlKey) &&
-                  e.key === "Enter"
-                )
-                  send(input);
-              }}
-              placeholder="输入检测条件、条款号或 RI / MI 计算问题…"
-              maxLength={4000}
-            />
-            <div className="actions">
-              <small>{input.length} / 4000</small>
-              <button
-                className="primary"
-                disabled={busy || offline || !input.trim()}
-              >
-                {busy ? "处理中…" : "发送问题 ↗"}
+    <div className={chat.turns.length ? "ask talking" : "ask"}>
+      <div className="ask-col">
+        {!chat.turns.length && (
+          <div className="ask-hello">
+            <h1>规程问答，我帮你查</h1>
+            <div className="examples">
+              {names.map((name, i) => (
+                <button type="button" onClick={() => choose(i)} key={name}>
+                  {name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {chat.turns.length > 0 && (
+          <div className="thread" aria-live="polite">
+            <div className="thread-bar">
+              <strong>规程问答</strong>
+              <button type="button" disabled={busy} onClick={reset}>
+                新会话
               </button>
             </div>
-          </form>
-          <div aria-live="polite">
-            {[...chat.turns].reverse().map((t) => (
+            {chat.turns.map((t) => (
               <Turn
                 key={t.id}
                 turn={t}
                 send={send}
+                live={busy && !t.events.some((e) => ["answer", "error", "clarification_required", "chart"].includes(e.type))}
                 disabled={busy || offline || (t.subject || "default") !== subject || chat.turns.slice(chat.turns.indexOf(t) + 1).some((next) => (next.subject || "default") === subject)}
               />
             ))}
           </div>
-        </div>
-        <aside className="panel examples">
-          <label>当前管段 <input aria-label="当前管段" maxLength={128} disabled={busy}
-            value={chat.subject ?? "default"} list="pipe-subjects"
-            onChange={(e) => setChat((prev) => ({...prev, subject: e.target.value}))} /></label>
-          <datalist id="pipe-subjects">{Object.keys(subjects).map((id) => <option key={id} value={id} />)}</datalist>
-          <h4>已确认参数</h4>
-          {Object.entries(subjects[subject]?.confirmed || {}).map(([kind, slots]) =>
-            <p key={kind}>{kind} · {Object.entries(slots).map(([k,v]) => k + "=" + v).join("，")}</p>)}
-          {!Object.keys(subjects[subject]?.confirmed || {}).length && <p>暂无已确认参数</p>}
-          {status && <p role="status">{status}</p>}
-          <h3>示例题库</h3>
-          {names.map((name, i) => (
-            <button onClick={() => choose(i)} key={name}>
-              <span>{name}</span>
-              <b>↗</b>
+        )}
+        <form
+          className="composer"
+          onSubmit={(e) => {
+            e.preventDefault();
+            send(input);
+          }}
+        >
+          <textarea
+            ref={editor}
+            aria-label="问题"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (
+                !e.nativeEvent.isComposing &&
+                (e.metaKey || e.ctrlKey) &&
+                e.key === "Enter"
+              )
+                send(input);
+            }}
+            placeholder="今天帮你查什么？输入检测条件、条款号或 RI / MI 计算问题"
+            maxLength={4000}
+          />
+          <div className="composer-foot">
+            <label>
+              管段
+              <input
+                aria-label="当前管段"
+                maxLength={128}
+                disabled={busy}
+                value={chat.subject ?? "default"}
+                list="pipe-subjects"
+                onChange={(e) =>
+                  setChat((prev) => ({ ...prev, subject: e.target.value }))
+                }
+              />
+            </label>
+            <datalist id="pipe-subjects">
+              {Object.keys(subjects).map((id) => (
+                <option key={id} value={id} />
+              ))}
+            </datalist>
+            {input.length > 0 && <small>{input.length} / 4000</small>}
+            <button
+              className="primary"
+              aria-label={busy ? "处理中" : "发送问题"}
+              disabled={busy || offline || !input.trim()}
+            >
+              {busy ? "…" : "↑"}
             </button>
-          ))}
-        </aside>
+          </div>
+        </form>
+        {(confirmed.length > 0 || status) && (
+          <div className="ask-meta">
+            {confirmed.map(([kind, slots]) => (
+              <span key={kind}>
+                {kind} · {Object.entries(slots).map(([k, v]) => k + "=" + v).join("，")}
+              </span>
+            ))}
+            {status && <span role="status">{status}</span>}
+          </div>
+        )}
+        {!chat.turns.length && (
+          <div className="prompts">
+            {prompts.map((i) => (
+              <button type="button" onClick={() => choose(i)} key={examples[i]}>
+                {examples[i]} <span aria-hidden="true">↗</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-    </>
+    </div>
   );
 }
