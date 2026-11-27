@@ -1,4 +1,4 @@
-"""Streamable HTTP MCP: calculation and plotting only (specs/04 §3.2)."""
+"""Streamable HTTP MCP: calculation and plotting only (specs/03-design/interfaces.md §3.2)."""
 
 from __future__ import annotations
 

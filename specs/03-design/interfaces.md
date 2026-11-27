@@ -1,7 +1,7 @@
 # 04 接口与参数槽位规格
 
 状态：Draft  
-本文是 Agent / HTTP / MCP 的**唯一契约枢纽**。字段与工具以人工核验的 CJJ 181—2012 为准；未发布规则不得产出指数或等级。与 `02-technical-design.md` §9–§12、`007-agent-eval-tdd.md` 冲突时，以本文 + `02` §12 修订条款为准，并回写本文。
+本文是 Agent / HTTP / MCP 的**唯一契约枢纽**。字段与工具以人工核验的 CJJ 181—2012 为准；未发布规则不得产出指数或等级。与 `technical-design.md` §9–§12、`../05-testing/agent-eval-tdd.md` 冲突时，以本文 + `technical-design.md` §12 修订条款为准，并回写本文。
 
 ## 1. 聊天与执行 API
 
@@ -53,7 +53,7 @@ API 不输出模型隐藏思维链。输入原文与参数确认事件分开存�
 
 ### `/api/v1/knowledge/...`
 
-沿用文档导入、预览、审核和删除（见 `006-rag-ingestion-v1.md`）。
+沿用文档导入、预览、审核和删除（见 `../04-development/rag-ingestion-v1.md`）。
 
 ### `/api/v1/evaluations/...`
 

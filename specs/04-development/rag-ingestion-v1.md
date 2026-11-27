@@ -8,7 +8,7 @@
 
 V1 让用户能从 Web 导入 CJJ 181—2012 原文或现有 DocMind 清洗产物，预览并选择切片方式和 embedding 模型，再将文档切片写入可持久化的向量库。每个向量节点都能追溯到原始文件、文档版本、PDF 页序和 DocMind 版面块。
 
-本 Spec 沿用 `001-knowledge-and-citations.md` 的知识边界：DocMind/OCR 产物是待核验内容，导入成功不等于获准回答。只有审核状态为 `approved` 的文档版本可进入已发布问答索引。未审核内容可完成切片和向量预构建，但只能停留在隔离的 staging collection，不能被 RAG 检索。
+本 Spec 沿用 `knowledge-and-citations.md` 的知识边界：DocMind/OCR 产物是待核验内容，导入成功不等于获准回答。只有审核状态为 `approved` 的文档版本可进入已发布问答索引。未审核内容可完成切片和向量预构建，但只能停留在隔离的 staging collection，不能被 RAG 检索。
 
 ### V1 包含
 

@@ -1,6 +1,6 @@
 # agentEval
 
-按 `specs/007-agent-eval-tdd.md` 做 Agent 层 TDD。执行器调用与 Web 相同的 `rag.web:app` 入口。
+按 `specs/05-testing/agent-eval-tdd.md` 做 Agent 层 TDD。执行器调用与 Web 相同的 `rag.web:app` 入口。
 
 ## 命令
 

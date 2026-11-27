@@ -2,14 +2,14 @@
 
 状态：Draft  
 范围：把 CJJ 181—2012 中的缺陷分值、RI/MI 公式、参数表与等级处置，变成可发布的 MCP 规则包。  
-关联：`03-calculation.md`、`003-calculation-mcp.md`、`05-tasks.md` T03、`pipe_assessment_mcp/rules/`。
+关联：`../03-design/calculation-rules.md`、`calculation-mcp.md`、`../06-delivery/tasks-and-gates.md` T03、`pipe_assessment_mcp/rules/`。
 
 ## 1. 为什么要双审
 
 计算输出会被演示和答卷当作规程结论。OCR/草稿/模型记忆都不可信。  
 **两人对照同一 PDF 哈希独立核验**，才能把规则标为 `approved`；否则一律 `RULE_NOT_PUBLISHED`。
 
-双审对象是**计算规则包**，不是条文检索索引（条文审核见 `006`）。二者都要过，但清单不同。
+双审对象是**计算规则包**，不是条文检索索引（条文审核见 `rag-ingestion-v1.md`）。二者都要过，但清单不同。
 
 ## 2. 交付物与目录
 
@@ -170,5 +170,5 @@ cp path/to/RI.json pipe_assessment_mcp/rules/published/RI.json
 1. `defect_score`、`RI` 至少一项（演示最少 RI）通过双审并进入 published；MI 按交付范围单独关门。  
 2. `validate_rules` 对 published 包退出码 0。  
 3. `reviews/` 留存 A/B 签字记录与 PDF 页码引用。  
-4. `03-calculation.md` §7 算例与 published `rule_version` 对齐。  
+4. `../03-design/calculation-rules.md` §7 算例与 published `rule_version` 对齐。  
 5. 题 9 领域未完成时，文档与 `AG-T09` 仍标明 blocked，不假装 T03 全域完成。

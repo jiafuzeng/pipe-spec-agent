@@ -1,6 +1,6 @@
 # 计算规则目录（T03 双审）
 
-规范：`specs/008-rule-dual-review.md`。操作摘要：`CHECKLIST.md`。
+规范：`specs/04-development/rule-dual-review.md`。操作摘要：`CHECKLIST.md`。
 
 | 子目录 | 用途 | `rulebook` 会加载？ |
 |---|---|---|

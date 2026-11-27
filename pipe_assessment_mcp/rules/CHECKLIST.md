@@ -1,6 +1,6 @@
 # 计算规则双审操作清单
 
-完整规范见 `specs/008-rule-dual-review.md`。
+完整规范见 `specs/04-development/rule-dual-review.md`。
 
 ## 每次发布前
 

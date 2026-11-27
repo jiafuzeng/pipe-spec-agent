@@ -8,7 +8,7 @@
 fixtures/
 ├── README.md
 ├── rules/
-│   └── RI.min.json          # 最小 approved 替身：复现 specs/03 §7.1 四点 RI
+│   └── RI.min.json          # 最小 approved 替身：复现 specs/03-design/calculation-rules.md §7.1 四点 RI
 └── mcp/                     # 可选：offline / timeout / idempotent 替身响应（实现 run.py 时补）
 ```
 

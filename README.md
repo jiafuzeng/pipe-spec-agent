@@ -1,6 +1,6 @@
 # Pipe Spec Agent · 管道规程工作台
 
-当前实现提供知识库导入与审核、条款检索、SSE 对话和独立 MCP 服务。唯一可发布的知识源由规程 PDF 的 SHA-256 锁定。生产计算规则默认未发布；评测用 `RULE_FIXTURE=1` + `agentEval/fixtures/rules/`。正式包经双审后放入 `pipe_assessment_mcp/rules/published/`（流程见 `specs/008-rule-dual-review.md`）。
+当前实现提供知识库导入与审核、条款检索、SSE 对话和独立 MCP 服务。唯一可发布的知识源由规程 PDF 的 SHA-256 锁定。生产计算规则默认未发布；评测用 `RULE_FIXTURE=1` + `agentEval/fixtures/rules/`。正式包经双审后放入 `pipe_assessment_mcp/rules/published/`（流程见 `specs/04-development/rule-dual-review.md`）。
 
 ## 本地运行
 
@@ -45,8 +45,8 @@ npm run dev
 
 | 页面 | Spec | 主要交互 |
 | --- | --- | --- |
-| 规程问答 | 001、002、003、004 | 九题入口、逐轮 SSE、确认参数、展开 MCP 记录、跳转引用原页、下载曲线和点值 |
-| 导入文档 | 006、WEB-07/08 | 上传原文，选择切片和模型，预览后提交同一组配置 |
+| 规程问答 | `04-development/` knowledge / agent-dialogue / calculation-mcp / web-demo | 九题入口、逐轮 SSE、确认参数、展开 MCP 记录、跳转引用原页、下载曲线和点值 |
+| 导入文档 | `04-development/rag-ingestion-v1.md`、WEB-07/08 | 上传原文，选择切片和模型，预览后提交同一组配置 |
 
 修改页面后执行：
 

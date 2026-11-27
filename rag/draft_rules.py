@@ -131,7 +131,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Generate pending_review worksheets for dual review (specs/008)."
+        description="Generate pending_review worksheets for dual review (specs/04-development/rule-dual-review)."
     )
     parser.add_argument("kind", choices=["RI", "MI", "defect_score"])
     parser.add_argument(

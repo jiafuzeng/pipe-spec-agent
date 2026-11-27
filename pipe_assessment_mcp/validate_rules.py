@@ -1,4 +1,4 @@
-"""Machine gate for dual-reviewed calculation packages (specs/008)."""
+"""Machine gate for dual-reviewed calculation packages (specs/04-development/rule-dual-review)."""
 
 from __future__ import annotations
 

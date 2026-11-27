@@ -11,7 +11,7 @@
 
 任何计算规则进入运行环境前必须有规则 ID、公式文本、参数定义、单位、范围/枚举、分档边界、默认值政策、舍入方式、等级阈值、出处、PDF 页码、人工审核人和回归样例。任务说明中的示例数值可以用于测试输入，但不能替代对计算规则原文的核验。
 
-可执行双审步骤、目录约定与机器门禁见 [008 计算规则双人审核](008-rule-dual-review.md)；命令入口：`python -m pipe_assessment_mcp.validate_rules`。
+可执行双审步骤、目录约定与机器门禁见 [008 计算规则双人审核](rule-dual-review.md)；命令入口：`python -m pipe_assessment_mcp.validate_rules`。
 
 ## 功能需求
 
@@ -49,7 +49,7 @@ MI 的全称、定义、适用条件和区别必须从 CJJ 181—2012 正文核�
 
 ## 工具逻辑 Schema
 
-字段与归属以 `04-interfaces.md` §3 为准。MCP **不**提供 `search_clauses`。
+字段与归属以 `../03-design/interfaces.md` §3 为准。MCP **不**提供 `search_clauses`。
 
 ### `calculate_index`
 
@@ -90,13 +90,13 @@ MI 的全称、定义、适用条件和区别必须从 CJJ 181—2012 正文核�
 
 ### CAL-05-A K 曲线
 
-**Given** RI 所需固定参数完整，且规则表确认 K 取值合法；算例见 `03-calculation.md` §7.1。  
+**Given** RI 所需固定参数完整，且规则表确认 K 取值合法；算例见 `../03-design/calculation-rules.md` §7.1。  
 **When** 用户要求 K 为 0、3、6、10 的结果与曲线。  
 **Then** 服务分别产生四个工具计算结果和可查看曲线；图表每个点与对应工具结果严格一致。
 
 ### CAL-06-A T 曲线及综合推演
 
-**Given** 第 9 题所有参数映射与公式已审核；目标值见 `03-calculation.md` §7.2。  
+**Given** 第 9 题所有参数映射与公式已审核；目标值见 `../03-design/calculation-rules.md` §7.2。  
 **When** 用户提交 DN1200、城市主干道 K=6、管龄 35 年、流砂、两处重度错口等输入，并要求 T 取 0、6、8、10 推演。  
 **Then** 系统先确认哪些输入可直接映射、哪些必填项仍缺；完整后计算 S、Smax、F、RI、等级与处置，并对四个 T 值逐点计算和绘图。不得自行假定题目未给出的必填参数。
 

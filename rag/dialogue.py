@@ -47,7 +47,7 @@ class Message(BaseModel):
 
 
 def search_clauses(query: str, top_k: int = 5) -> dict:
-    """In-process retrieval. Not an MCP tool (specs/04 §3.1)."""
+    """In-process retrieval. Not an MCP tool (specs/03-design/interfaces.md §3.1)."""
     from rag.registry import Registry, knowledge_root
     from rag.search import search
 

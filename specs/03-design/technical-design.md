@@ -109,7 +109,7 @@ data/knowledge/      # 权威：originals、parsed、registry.sqlite、Chroma
 # 已删除主仓 kb/；发布规则在 pipe-assessment-mcp/rules/；评测夹具在 agentEval/fixtures/rules/
 ```
 
-查找解析产物顺序见 `006` §3.3。不再把 `kb/clauses.jsonl` / `kb/index/` 当作 V1 必建路径。
+查找解析产物顺序见 `../04-development/rag-ingestion-v1.md` §3.3。不再把 `kb/clauses.jsonl` / `kb/index/` 当作 V1 必建路径。
 
 ## 3. 一项任务如何执行
 
@@ -127,7 +127,7 @@ V1 使用 LangGraph 单图，步骤类型有限。LLM 可以拆分目标、提�
 | 恢复计算 | 用户补齐参数后，对每个 K 值建立独立计算步骤 | 已成功的点保留结果 ID，只重试未完成的点 |
 | 绘图交付 | 用本批次结果 ID 生成曲线，返回坐标、固定参数和依据 | 绘图失败时仍展示计算表；重试绘图复用原结果 |
 
-条文结论只使用本次检索到的条款。计算数字必须能在同一次工具返回中找到，对不上就删去并说明未能核对。规划日志和 MCP 日志随回答返回，结构见 `04-interfaces.md`。
+条文结论只使用本次检索到的条款。计算数字必须能在同一次工具返回中找到，对不上就删去并说明未能核对。规划日志和 MCP 日志随回答返回，结构见 `interfaces.md`。
 
 ### 3.1 五个标识
 
@@ -152,7 +152,7 @@ V1 使用 LangGraph 单图，步骤类型有限。LLM 可以拆分目标、提�
 
 ## 4. 检索
 
-建库与切片按 `006-rag-ingestion-v1.md`：DocMind layout / Markdown → LlamaIndex → Chroma + registry；不在回答时临时 OCR。`kb/clauses.jsonl` 不是 V1 运行时权威语料。
+建库与切片按 `../04-development/rag-ingestion-v1.md`：DocMind layout / Markdown → LlamaIndex → Chroma + registry；不在回答时临时 OCR。`kb/clauses.jsonl` 不是 V1 运行时权威语料。
 
 1. 活动索引只含人工审核通过的 nodes；条款号形态如 `1.0.1`、`表8.3.4-1`。
 2. 按规程版本、章节、内容类型等元数据过滤；条款号/表号优先精确匹配。普通查询并行 BM25 与向量召回。
@@ -164,15 +164,15 @@ V1 使用 LangGraph 单图，步骤类型有限。LLM 可以拆分目标、提�
 
 ## 4.1 文档导入与向量索引 V1
 
-Web 上传原始 PDF 时，后端复用 DocMind 生成 JSON/Markdown；已有 `data/docmind/{document_id}/document.json` 时优先使用 JSON 中的 `Data.layouts`，避免重复解析。原始文件以 SHA-256 标识并保存为不可变版本。具体格式、API、metadata、切片配置、预览和验收场景见 `006-rag-ingestion-v1.md`。
+Web 上传原始 PDF 时，后端复用 DocMind 生成 JSON/Markdown；已有 `data/docmind/{document_id}/document.json` 时优先使用 JSON 中的 `Data.layouts`，避免重复解析。原始文件以 SHA-256 标识并保存为不可变版本。具体格式、API、metadata、切片配置、预览和验收场景见 `../04-development/rag-ingestion-v1.md`。
 
-LlamaIndex `Document`/Node Parser 负责将已清洗的结构块切成 nodes，`IngestionPipeline` 将所选 embedding integration 生成的向量写入本地 Persistent Chroma。默认结构优先切片，chunk size 512 tokens、overlap 64。可选策略见 `006-rag-ingestion-v1.md`：句子、Token、Markdown 标题、句子窗口、层次、语义和语义双合并。SQLite 保存导入任务、审核状态、原文元数据和索引版本；原文 PDF/DocMind 文件留在 `data/knowledge`。
+LlamaIndex `Document`/Node Parser 负责将已清洗的结构块切成 nodes，`IngestionPipeline` 将所选 embedding integration 生成的向量写入本地 Persistent Chroma。默认结构优先切片，chunk size 512 tokens、overlap 64。可选策略见 `../04-development/rag-ingestion-v1.md`：句子、Token、Markdown 标题、句子窗口、层次、语义和语义双合并。SQLite 保存导入任务、审核状态、原文元数据和索引版本；原文 PDF/DocMind 文件留在 `data/knowledge`。
 
 每个 node 和 Chroma collection 都绑定 `source_doc_id`、原文 SHA、PDF 页序、章节/条款、DocMind layout ID、切片配置哈希、embedding profile/model version/dimension、review status。行政元数据可过滤但不参与 embedding 文本；页码和条款不可从缺失数据中推断。新导入内容默认 `pending_review`，向量检索按 `approved` metadata 过滤。索引使用 staging collection，完整成功后才注册为可用版本；失败不覆盖已有活动索引。
 
 ## 5. 智能问数与记忆
 
-槽位是结构化字段，不是一段自由摘要。字段定义、必填组合和追问文案的数据来源见 `04-interfaces.md`。
+槽位是结构化字段，不是一段自由摘要。字段定义、必填组合和追问文案的数据来源见 `interfaces.md`。
 
 抽取由模型完成，结果必须通过模式校验：管径是正数，K 只能是 0、3、6、10，T 只能是表 8.3.4-3 中出现的值，缺陷必须带名称或代码以及等级或分值。校验失败则忽略该字段并继续追问，不把模糊词写成一个数。
 
@@ -282,7 +282,7 @@ LlamaIndex `Document`/Node Parser 负责将已清洗的结构块切成 nodes，`
 
 1. `search_clauses` 只在主项目进程内调用，不再注册为 MCP 工具。
 2. MCP 只保留 `get_calculation_schema`、`lookup_defect_score`、`calculate_index`、`plot_curve`。
-3. `04-interfaces.md` 已改为唯一契约：检索在主项目，MCP 仅计算/绘图；旧 MCP 客户端升级时按破坏性变更记录。
+3. `interfaces.md` 已改为唯一契约：检索在主项目，MCP 仅计算/绘图；旧 MCP 客户端升级时按破坏性变更记录。
 
 ### 12.3 健康检查与 Compose
 
@@ -316,7 +316,7 @@ LlamaIndex `Document`/Node Parser 负责将已清洗的结构块切成 nodes，`
 3. 一次 run 在首次 `get_calculation_schema` 后锁定 `rule_version`；后续查分、计算、绘图必须传同一版本。
 4. 主项目在调用前持久化 `(step_id, idempotency_key)`；超时用原键重试一次。当前每次 `uuid4` 的做法不满足「响应丢失可复用结果」。
 5. 生产计算开关默认关闭，直到至少一份 RI 规则包完成双人审核并标记 `approved`；未发布时返回 `RULE_NOT_PUBLISHED`，不返回数值。
-6. **评测夹具**：仅当 `RULE_FIXTURE=1`（或等价环境变量）时，进程可加载 `agentEval/fixtures/rules/` 最小 RI 包，供 `fixture_rules=true` 用例；夹具不得写入演示发布态，报告须标 `rule_mode=fixture`。细则见 `03-calculation.md` §7.0。
+6. **评测夹具**：仅当 `RULE_FIXTURE=1`（或等价环境变量）时，进程可加载 `agentEval/fixtures/rules/` 最小 RI 包，供 `fixture_rules=true` 用例；夹具不得写入演示发布态，报告须标 `rule_mode=fixture`。细则见 `calculation-rules.md` §7.0。
 7. Compose：`backend` **不得** `depends_on: mcp` 作为硬依赖；MCP 为可选侧车，`/health.mcp` 可为 `unavailable`。
 
 ### 12.6 缺陷推导与规则数据
@@ -348,14 +348,14 @@ LlamaIndex `Document`/Node Parser 负责将已清洗的结构块切成 nodes，`
 
 1. 对话区旁固定显示当前管段与已确认参数；切换管段走 `subject_id`。
 2. `session_id` / 进行中的 `run_id` 写入浏览器本地；刷新后先 `GET session`，再按 `after_event_id` 续读。
-3. `agentEval` 按 `007-agent-eval-tdd.md`：先定 `agent_cases.json`，再实现 `run.py`；调用与 Web 相同的 Agent 入口，报告供 `GET /api/v1/evaluations/agent` 读取。
+3. `agentEval` 按 `../05-testing/agent-eval-tdd.md`：先定 `agent_cases.json`，再实现 `run.py`；调用与 Web 相同的 Agent 入口，报告供 `GET /api/v1/evaluations/agent` 读取。
 4. `/api/v1/evaluations/rag` 兼容或迁移现有 `rag-eval`；前端评测页改走 evaluations 命名空间。
 
 ### 12.9 文档路径统一
 
 当前同时存在 `data/document.json`、`data/docmind/...` 与 `data/knowledge/parsed/...`。
 
-约定：权威导入路径以 `006-rag-ingestion-v1.md` 的 `data/knowledge/originals|parsed` 为准；仓库样例 `data/document.json` / `data/document.md` 仅作对齐页码的过渡输入，实现中写明查找顺序，避免三套路径并存无说明。
+约定：权威导入路径以 `../04-development/rag-ingestion-v1.md` 的 `data/knowledge/originals|parsed` 为准；仓库样例 `data/document.json` / `data/document.md` 仅作对齐页码的过渡输入，实现中写明查找顺序，避免三套路径并存无说明。
 
 ### 12.10 修正后的落地门禁
 

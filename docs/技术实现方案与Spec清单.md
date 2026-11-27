@@ -1,9 +1,11 @@
 # 技术规程问答 Agent 技术实现方案
 
 > **权威声明（2026-03 起）**  
-> 行为与接口以 `specs/` 为准，尤其是 `04-interfaces.md`、`006-rag-ingestion-v1.md`、`007-agent-eval-tdd.md`、`02-technical-design.md` §12。  
+> 行为与接口以 `specs/` 为准（按治理→需求→设计→开发→测试→交付组织），尤其是  
+> `specs/03-design/interfaces.md`、`specs/04-development/rag-ingestion-v1.md`、  
+> `specs/05-testing/agent-eval-tdd.md`、`specs/03-design/technical-design.md` §12。  
 > 本文是早期方案叙述；若与 Spec 冲突，**改本文或删除过时段，不得按本文开工**。  
-> 仓库已有 `rag/`、`frontend/`、导入与混合检索实现；目标架构仍为双交付物 + 三进程，过渡路径见 `02` §12。
+> 仓库已有 `rag/`、`frontend/`、导入与混合检索实现；目标架构仍为双交付物 + 三进程，过渡路径见技术设计 §12。
 
 ## 1. 目标与实现边界
 
@@ -34,9 +36,9 @@
 
 ## 3. 技术架构
 
-V1 定为两个独立交付物、三个运行进程：`pipe-spec-agent` 提供 React 前端和 FastAPI 应用，`pipe-assessment-mcp` 提供远程计算服务。LangGraph 负责一项任务怎么走，RAG 负责规程依据在哪里，MCP 负责按哪个规则版本算出什么结果。计算服务离线不阻止主应用启动。目录与缺口见 `specs/02-technical-design.md`；**HTTP/MCP 唯一契约**见 `specs/04-interfaces.md`；Agent TDD 见 `specs/007-agent-eval-tdd.md` 与 `agentEval/agent_cases.json`。检索不在 MCP 上；`result_id`/`resource_id` 为规范字段名。
+V1 定为两个独立交付物、三个运行进程：`pipe-spec-agent` 提供 React 前端和 FastAPI 应用，`pipe-assessment-mcp` 提供远程计算服务。LangGraph 负责一项任务怎么走，RAG 负责规程依据在哪里，MCP 负责按哪个规则版本算出什么结果。计算服务离线不阻止主应用启动。目录与缺口见 `specs/03-design/technical-design.md`；**HTTP/MCP 唯一契约**见 `specs/03-design/interfaces.md`；Agent TDD 见 `specs/05-testing/agent-eval-tdd.md` 与 `agentEval/agent_cases.json`。检索不在 MCP 上；`result_id`/`resource_id` 为规范字段名。
 
-首版采用混合检索与重排（见 `006`）：DocMind / Markdown → LlamaIndex 切片 → Chroma + SQLite metadata；BM25 与向量候选合并去重后直接 reranker，**不使用 RRF**。`kb/clauses.jsonl` **不是** V1 运行时权威语料；主仓已删除 `kb/` 规则草稿目录。计算规则为审核后的 JSON 规则包（目标位于 `pipe-assessment-mcp/rules/`；评测夹具在 `agentEval/fixtures/rules/`）。
+首版采用混合检索与重排（见 `specs/04-development/rag-ingestion-v1.md`）：DocMind / Markdown → LlamaIndex 切片 → Chroma + SQLite metadata；BM25 与向量候选合并去重后直接 reranker，**不使用 RRF**。`kb/clauses.jsonl` **不是** V1 运行时权威语料；主仓已删除 `kb/` 规则草稿目录。计算规则为审核后的 JSON 规则包（目标位于 `pipe-assessment-mcp/rules/`；评测夹具在 `agentEval/fixtures/rules/`）。
 
 ```mermaid
 flowchart LR
@@ -63,7 +65,7 @@ flowchart LR
 | MCP | 独立交付物 `pipe-assessment-mcp`，FastMCP、Streamable HTTP | 查 Schema、查分、确定性计算和绘图；规则版本、幂等键和图表资源 ID 由该服务拥有 |
 | 规则数据 | 审核后 JSON 规则包（MCP `rules/`） | 含版次、出处、审核人、reference_cases；OCR/草稿不进生产；评测用 `agentEval/fixtures` |
 | 数值计算 | Python 纯函数 + `decimal.Decimal` | RI/MI、中间量、等级和边界比较；不由模型计算或查表 |
-| 图表 | Matplotlib → `resource_id`；主项目代读 | SSE `chart` 只带资源 ID，不塞整图 Base64（见 `04`） |
+| 图表 | Matplotlib → `resource_id`；主项目代读 | SSE `chart` 只带资源 ID，不塞整图 Base64（见 `specs/03-design/interfaces.md`） |
 | 会话与日志 | 一个 SQLite 实例中的业务表和 LangGraph checkpoint | `session_id`、`subject_id`、`turn_id`、`run_id`、`step_id` 分开。确认事实和工具结果可跨轮恢复 |
 | 模型接入 | OpenAI 兼容 HTTP 接口，密钥/地址放环境变量 | 模型只处理意图、槽位抽取、规划和行文；供应商可替换 |
 | 部署 | Docker Compose | 前端、API、MCP 三个服务；前端把 `/api` 转到 API，并提供健康检查 |
@@ -73,7 +75,7 @@ flowchart LR
 ### 3.2 关键模块边界
 
 1. **规程解析与发布**：PDF 入库、页码/章节/条款切分、OCR/表格校验、人工审核、版本发布。未审核内容不进入可回答索引。
-2. **检索与引用**：只返回带来源元数据的 `ClauseEvidence`，不得把裸文本交给生成节点。低相关度或证据不足时触发拒答/澄清。V1 文档导入和向量索引详见 `specs/006-rag-ingestion-v1.md`。
+2. **检索与引用**：只返回带来源元数据的 `ClauseEvidence`，不得把裸文本交给生成节点。低相关度或证据不足时触发拒答/澄清。V1 文档导入和向量索引详见 `specs/04-development/rag-ingestion-v1.md`。
 3. **问题分类与规划**：识别条文问答、比较、方案、计算、绘图或复合任务；将复合请求拆为有向任务步骤。LLM 可选择已注册节点，不可创造工具或改写工具参数语义。
 4. **参数槽位与会话状态**：由计算定义中的参数 Schema 生成缺项清单；记录值、单位、用户确认状态、来源消息和关联管段 ID。
 5. **计算引擎**：独立纯函数，接收通过 Schema 校验的参数，返回公式、参数追踪、逐步结果、等级、边界检查和引用条款。
@@ -87,11 +89,13 @@ flowchart LR
 
 ```text
 specs/
-  README.md                         # 规格索引、状态、变更流程
-  001-knowledge-and-citations.md    # 唯一知识源、检索、引用与拒答
-  002-agent-dialogue.md             # 分类、规划、追问、会话状态与失败恢复
-  003-calculation-mcp.md            # 参数目录、计算工具、等级与曲线
-  004-web-demo-and-deliverables.md  # UI、演示、九题答卷、自查与验收
+  README.md                                 # 流程索引
+  01-governance/constitution.md             # 章程
+  02-requirements/product-requirements.md   # 需求与九题
+  03-design/                                # 技术设计 / 接口 / 计算规则
+  04-development/                           # 功能 Spec（RAG / Agent / MCP / Web / 双审）
+  05-testing/agent-eval-tdd.md              # Agent TDD
+  06-delivery/tasks-and-gates.md            # 任务与门禁
 ```
 
 每个 Spec 必须包含：背景/目标、非目标、角色与主流程、Given/When/Then 验收场景、输入输出 Schema、失败与边界行为、来源条款/证据、依赖和未决问题。需求变更先修改 Spec，再改实现和测试；Spec 与实现不一致时以已批准 Spec 为准，并在 PR 中说明偏差。
@@ -255,7 +259,7 @@ flowchart TD
 | 8 | 002、003 | 列尽 RI 必填参数、作用、条款；缺项时不调用计算器、不返回 RI |
 | 9 | 002、003 | 第一问对“流砂”先按表 8.3.4-3 追问土质列，不得自行映射；第二问用户明确给定 T=0/6/8/10 时按确认参数逐点计算并绘图 |
 
-第 6 题的现场约束和条款位置已在 `specs/01-requirements.md` 具体化；实现需遵守其中的水位、管径限制，并且不得把题目没有规定的埋深/管材/道路等级臆造成方法否决条件。第 9 题的缺陷计数、E、K、T 映射以 `specs/01-requirements.md` 的分步标准为准。第 6 题必须保留“追问—补充—规划—检索—结论”完整记录；第 7 至 9 题保留工具输入输出、证据条款和图表。测试答卷不可手工编造运行截图；截图对应实际构建版本和实际会话。
+第 6 题的现场约束和条款位置已在 `specs/02-requirements/product-requirements.md` 具体化；实现需遵守其中的水位、管径限制，并且不得把题目没有规定的埋深/管材/道路等级臆造成方法否决条件。第 9 题的缺陷计数、E、K、T 映射以 `specs/02-requirements/product-requirements.md` 的分步标准为准。第 6 题必须保留“追问—补充—规划—检索—结论”完整记录；第 7 至 9 题保留工具输入输出、证据条款和图表。测试答卷不可手工编造运行截图；截图对应实际构建版本和实际会话。
 
 ### 9.2 核心质量指标
 

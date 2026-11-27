@@ -1,6 +1,6 @@
 {
   "edition": "CJJ 181-2012",
-  "protocol": "specs/007-agent-eval-tdd.md。唯一机器契约；与 agent_validation.json 双文件并存（后者仅题面/人工 acceptance）。数值以 specs/03-calculation.md §7 为准。fixture_rules 需 RULE_FIXTURE=1 + fixtures/rules。",
+  "protocol": "specs/05-testing/agent-eval-tdd.md。唯一机器契约；与 agent_validation.json 双文件并存（后者仅题面/人工 acceptance）。数值以 specs/03-design/calculation-rules.md §7 为准。fixture_rules 需 RULE_FIXTURE=1 + fixtures/rules。",
   "refusal": "依据 CJJ 181—2012 原文无相关规定，不作推测性补充。",
   "cases": [
     {

@@ -6,7 +6,7 @@
 - 候选文件：  
 - 对照页（PDF 页序 / 条款或表号）：  
 
-## 勾选（见 specs/008 §4）
+## 勾选（见 specs/04-development/rule-dual-review §4）
 
 - [ ] source_hash 一致  
 - [ ] 公式/表行与原文一致  

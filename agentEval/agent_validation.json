@@ -1,6 +1,6 @@
 {
   "edition": "CJJ 181-2012",
-  "protocol": "题面与人工 acceptance。机器判分以 agent_cases.json + specs/007 为准。expected_action 中 clarify_then_plot 映射为多轮：clarify_then_explain|clarify → calculate_and_plot。每题独立会话仅适用于无跨轮 precondition 的单轮叙述题。",
+  "protocol": "题面与人工 acceptance。机器判分以 agent_cases.json + specs/05-testing/agent-eval-tdd 为准。expected_action 中 clarify_then_plot 映射为多轮：clarify_then_explain|clarify → calculate_and_plot。每题独立会话仅适用于无跨轮 precondition 的单轮叙述题。",
   "refusal": "依据 CJJ 181—2012 原文无相关规定，不作推测性补充。",
   "cases": [
     {

@@ -1,8 +1,8 @@
 # 03 计算规则规格
 
 状态：Draft  
-详细工具验收：见 [003 计算、MCP 与曲线](003-calculation-mcp.md)。  
-需求来源：`01-requirements.md` R3/R4，以及第 7 至 9 题验收场景。
+详细工具验收：见 [003 计算、MCP 与曲线](../04-development/calculation-mcp.md)。  
+需求来源：`../02-requirements/product-requirements.md` R3/R4，以及第 7 至 9 题验收场景。
 
 ## 1. 计算职责
 
@@ -16,7 +16,7 @@
 
 未经审核发布的规则不可被计算 MCP 使用。规则变更产生新版本，不覆盖旧计算记录。
 
-**双人审核流程（T03）** 以 [008 计算规则双人审核](008-rule-dual-review.md) 为准：worksheet → A/B 对照 PDF → `validate_rules` → `pipe_assessment_mcp/rules/published/`。夹具包不得进入 published。
+**双人审核流程（T03）** 以 [008 计算规则双人审核](../04-development/rule-dual-review.md) 为准：worksheet → A/B 对照 PDF → `validate_rules` → `pipe_assessment_mcp/rules/published/`。夹具包不得进入 published。
 
 ## 3. 槽位生成与计算流程
 
@@ -27,7 +27,7 @@
 5. 完整时调用 MCP；将结果字段与工具返回值绑定后生成答案。
 6. 在响应中列公式、输入表、计算过程、结论和条款引用。
 
-MI 与 RI 各自定义槽位，不因共享字段而混淆规则。详细协议及边界见 `003-calculation-mcp.md`。
+MI 与 RI 各自定义槽位，不因共享字段而混淆规则。详细协议及边界见 `../04-development/calculation-mcp.md`。
 
 ## 4. 第 7 题 RI–K 曲线
 
@@ -53,12 +53,12 @@ MI 与 RI 各自定义槽位，不因共享字段而混淆规则。详细协议�
 
 ## 6. 第 9 题输入映射
 
-按 `01-requirements.md` 已有的分步标准实施：
+按 `../02-requirements/product-requirements.md` 已有的分步标准实施：
 
 1. 先用缺陷分值 MCP 核对两处重度错口和题给单处分值 5；不一致则停止并报告表 8.2.3 的表值。
 2. 间距 1.2 m 按需求基线的分组和系数规则处理；不得触发 1 m 内叠加规则。
 3. D=1200 mm、K=6 按需求基线给定的表项映射，并在结果中展示核验依据。
-4. “流砂”不是表 8.3.4-3 的列名。第（1）问先展示原表土质列并询问用户指定列；指定前不得计算 RI。对不依赖 T 的中间量是否单独计算，须严格按已发布子计算 Schema 和 `01-requirements.md` 阻断规则处理，不输出 RI 或等级。
+4. “流砂”不是表 8.3.4-3 的列名。第（1）问先展示原表土质列并询问用户指定列；指定前不得计算 RI。对不依赖 T 的中间量是否单独计算，须严格按已发布子计算 Schema 和 `../02-requirements/product-requirements.md` 阻断规则处理，不输出 RI 或等级。
 5. 第（2）问中用户明确要求 T=0、6、8、10，视为对每个计算点的参数确认；工具逐点返回结果，绘图数据与结果一致。
 6. 管龄 35 年和管材不得被额外转换成式 8.3.4 中未定义的系数；管龄仅按对应条款用于周期相关说明。
 
@@ -100,7 +100,7 @@ MI 与 RI 各自定义槽位，不因共享字段而混淆规则。详细协议�
 
 ### 7.2 题 9：缺陷推导目标值（待领域层落地）
 
-在完整分组/系数/式 8.3.4 审核通过前，下列为目标验收值（来自 `01-requirements.md`），不是当前简化加权器的输出：
+在完整分组/系数/式 8.3.4 审核通过前，下列为目标验收值（来自 `../02-requirements/product-requirements.md`），不是当前简化加权器的输出：
 
 | 步骤 | 期望 |
 |---|---|
