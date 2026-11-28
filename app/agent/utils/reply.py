@@ -29,8 +29,9 @@ def emit_partial_answer(text: str, items: list) -> None:
 
 
 def emit_draft_ready(text: str, items: list) -> None:
-    """草稿就绪提示（尚未最终定稿）。"""
+    """草稿已可阅读：推送完整回答并结束流式光标。"""
     n = len(items)
+    body = _markdown_body(text)
     emit(
         "plan_step",
         dict(
@@ -40,7 +41,16 @@ def emit_draft_ready(text: str, items: list) -> None:
             )
         ),
     )
-    log.info("draft markdown (%d evidence):\n%s", n, _markdown_body(text))
+    emit(
+        "answer",
+        dict(
+            text=body,
+            format="markdown",
+            citations=[item["evidence_id"] for item in items if item.get("evidence_id")],
+            partial=False,
+        ),
+    )
+    log.info("draft markdown (%d evidence):\n%s", n, body)
 
 
 def emit_final_answer(text: str, items: list, *, note: str = "") -> dict:

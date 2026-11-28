@@ -75,7 +75,7 @@ class MemoryTests(unittest.TestCase):
                 {"configurable": {"thread_id": "a"}},
                 {
                     "query": "隔离校验",
-                    "intent": "qa",
+                    "intent": "retrieve",
                 },
                 as_node="__start__",
             )

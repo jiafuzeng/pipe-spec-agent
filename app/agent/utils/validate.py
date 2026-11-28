@@ -7,7 +7,8 @@ from pydantic import BaseModel, Field
 from app.agent.answers import REFUSAL, format_answer, normalize_citations
 from app.agent.language import _chat
 from app.agent.prompts import ANSWER_FORMAT
-from app.agent.utils.compress import compress_item
+from app.agent.utils.compress import compress_items
+from log import trace
 
 
 _VALIDATE_INSTRUCTION = f"""你是排水管道规程回答的定稿编辑。
@@ -42,12 +43,11 @@ class ValidateResult(BaseModel):
 
 def _pack_evidence(evidence: list, query: str = "") -> str:
     lines = []
-    for item in evidence or []:
-        eid = item.get("evidence_id") or ""
-        for row in compress_item(item, query):
-            lines.append(
-                f"- id={eid} clause={row['clause_no']} quote={row['quote']}"
-            )
+    for row in compress_items(evidence, query):
+        eid = row.get("evidence_id") or ""
+        lines.append(
+            f"- id={eid} clause={row['clause_no']} quote={row['quote']}"
+        )
     return "\n".join(lines) or "（无证据）"
 
 
@@ -69,6 +69,8 @@ async def validate_answer(
     draft = normalize_citations(draft or "") or REFUSAL
     if not evidence:
         return draft, [], []
+    packed = _pack_evidence(evidence, query)
+    trace("validate.pack", chars=len(packed), draft=len(draft))
     try:
         result = await _chat().with_structured_output(ValidateResult).ainvoke(
             [
@@ -76,7 +78,7 @@ async def validate_answer(
                 (
                     "human",
                     f"用户问题：{query}\n\n草稿回答：\n{draft}\n\n证据列表：\n"
-                    f"{_pack_evidence(evidence, query)}",
+                    f"{packed}",
                 ),
             ]
         )
@@ -87,5 +89,6 @@ async def validate_answer(
         text = format_answer(result.intro, result.sections) or draft
         kept = _keep_evidence(evidence, set(result.keep_evidence_ids or []))
         return text, kept, list(result.dropped or [])
-    except Exception:
+    except Exception as exc:
+        trace("validate.error", error=type(exc).__name__)
         return draft, evidence, []

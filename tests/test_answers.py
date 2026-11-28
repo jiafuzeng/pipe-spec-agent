@@ -23,13 +23,18 @@ PURPOSE = [
 
 
 class ClassifyTests(unittest.TestCase):
-    def test_chitchat_and_qa(self):
+    def test_chitchat_and_retrieve(self):
         self.assertEqual(classify_turn("你好"), "chitchat")
-        self.assertEqual(classify_turn("第1.0.1条写了什么？"), "qa")
-        self.assertEqual(classify_turn("计算 RI"), "qa")
+        self.assertEqual(classify_turn("第1.0.1条写了什么？"), "retrieve")
+        self.assertEqual(classify_turn("检查井为何要在声纳之前"), "retrieve")
 
     def test_compare_by_methods(self):
         self.assertEqual(classify_turn("CCTV 与 QV 的适用条件有何差异？"), "compare")
+        self.assertEqual(classify_turn("两种检测方案怎么对比"), "compare")
+
+    def test_compute_by_calc_or_chart(self):
+        self.assertEqual(classify_turn("计算 RI"), "compute")
+        self.assertEqual(classify_turn("把缺陷统计画成图"), "compute")
 
 
 class SummaryTests(unittest.TestCase):

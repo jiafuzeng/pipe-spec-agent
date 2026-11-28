@@ -10,9 +10,12 @@ from langgraph.store.sqlite.aio import AsyncSqliteStore
 from app import settings
 from app.agent.graph import compile_graph, set_graph
 from app.server.routes import chat, evaluations, health, knowledge
+from log import setup as setup_trace
 
 
 def create_app():
+    setup_trace()
+
     @asynccontextmanager
     async def lifespan(app):
         path = Path(os.getenv("LANGGRAPH_DB", str(settings.LANGGRAPH_DB)))

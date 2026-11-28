@@ -114,6 +114,10 @@ class SessionListTests(unittest.TestCase):
             self.assertEqual(len(texts), 31)
             self.assertEqual(texts[0], "问题00")
             self.assertEqual(texts[-1], "问题30")
+            last = opened["messages"][-1]
+            self.assertTrue(last["events"])
+            self.assertIn(last["events"][-1]["type"], {"answer", "error"})
+            self.assertNotEqual(last.get("run_status"), "running")
 
     def test_rename_and_delete_keep_other_sessions(self):
         with TemporaryDirectory() as tmp, _api(tmp) as api:

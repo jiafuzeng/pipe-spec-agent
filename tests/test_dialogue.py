@@ -67,16 +67,6 @@ class TurnTests(unittest.TestCase):
         )
         rewrite.start()
         self.addCleanup(rewrite.stop)
-
-        async def _pass_validate(query, draft, evidence):
-            return draft, evidence, []
-
-        validate = patch(
-            "app.agent.workflow.validate_answer",
-            side_effect=_pass_validate,
-        )
-        validate.start()
-        self.addCleanup(validate.stop)
         self._client_cm = TestClient(create_app())
         self.api = self._client_cm.__enter__()
         self.addCleanup(self._client_cm.__exit__, None, None, None)
@@ -87,7 +77,11 @@ class TurnTests(unittest.TestCase):
         with patch("app.agent.tools.search_clauses") as search:
             text = self.api.post(self.url, json={"message": "你好"}).text
         search.assert_not_called()
-        self.assertIn("意图识别：闲聊（chitchat）", text)
+        self.assertIn("意图识别：闲聊", text)
+        self.assertIn('"intent":"chitchat"', text.replace(" ", ""))
+        self.assertIn("基础条文与概念检索", text)
+        self.assertIn("检测方法与方案对比", text)
+        self.assertIn("计算推理、智能问数与可视化", text)
         self.assertIn("排水管道规程助手", text)
         self.assertIn("event: answer", text)
         self.assertIn("CJJ 181", text)
@@ -208,6 +202,40 @@ class TurnTests(unittest.TestCase):
             patch(
                 "app.agent.utils.agent.create_agent",
                 return_value=_TimedOut(),
+            ),
+            patch(
+                "app.agent.tools.search_clauses",
+                return_value={"evidence": evidence},
+            ),
+        ):
+            text = self.api.post(
+                self.url,
+                json={"message": "编制目的是什么？"},
+            ).text
+        self.assertNotIn("TOOL_UNAVAILABLE", text)
+        self.assertIn("模型超时", text)
+        self.assertIn("event: answer", text)
+
+    def test_react_timeout_exception_group_falls_back(self):
+        class _Grouped:
+            async def astream(self, inputs, config=None, stream_mode=None):
+                yield ("updates", {"tools": {}})
+                raise ExceptionGroup(
+                    "During task with name 'model'",
+                    [TimeoutError("Request timed out.")],
+                )
+
+        evidence = [
+            {
+                "evidence_id": "p1",
+                "clause_no": "1.0.1",
+                "quote": "1.0.1 为加强城镇排水管道检测管理，制定本规程。",
+            }
+        ]
+        with (
+            patch(
+                "app.agent.utils.agent.create_agent",
+                return_value=_Grouped(),
             ),
             patch(
                 "app.agent.tools.search_clauses",

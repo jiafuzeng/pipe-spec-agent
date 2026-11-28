@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import time
 import uuid
 from contextvars import ContextVar
@@ -11,8 +10,9 @@ from contextvars import ContextVar
 from langchain_core.tools import tool
 from langgraph.config import get_stream_writer
 
-from app.agent.utils.compress import compress_items
+from app.agent.utils.compress import compress_items, render_clauses
 from app.knowledge.retrieval import search_clauses
+from log import trace
 
 _evidence: ContextVar[list | None] = ContextVar("agent_evidence", default=None)
 _stream_writer: ContextVar = ContextVar("agent_stream_writer", default=None)
@@ -87,12 +87,21 @@ async def search_clauses_tool(query: str) -> str:
     for item in items:
         emit("evidence", item)
     if not items:
+        trace("search", query=query, hits=0, status=status)
         return "未命中相关条款原文。"
-    return json.dumps(
-        compress_items(items, query),
-        ensure_ascii=False,
-        separators=(",", ":"),
+    raw = sum(len(item.get("quote") or "") for item in items)
+    rows = compress_items(items, query)
+    body = render_clauses(rows)
+    trace(
+        "compress",
+        query=query,
+        hits=len(items),
+        raw=raw,
+        out=len(body),
+        clauses=",".join(row["clause_no"] for row in rows if row.get("clause_no")),
+        ms=round(1000 * (time.monotonic() - start)),
     )
+    return body
 
 
 def bind_evidence(bucket: list):

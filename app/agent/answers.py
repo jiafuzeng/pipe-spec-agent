@@ -14,6 +14,12 @@ _METHODS = (
     ("人员进入", ("人员进入", "人工下井", "进入管内")),
     ("潜水", ("潜水",)),
 )
+_COMPUTE = re.compile(
+    r"计算|养护指数|\bRI\b|\bMI\b|评分|问数|统计|"
+    r"可视化|图表|画图|绘图|柱状|折线|饼图",
+    re.I,
+)
+_COMPARE = re.compile(r"比较|对比|差异|区别|哪个更|哪种更|如何取舍")
 
 REFUSAL = "依据 CJJ 181—2012 原文无相关规定，不作推测性补充。"
 
@@ -38,19 +44,14 @@ def classify_turn(query: str) -> Intent:
     text = (query or "").strip()
     if _CHITCHAT.match(text):
         return "chitchat"
-    if "检测方案" in text or (
-        "如何检测" in text and re.search(r"管径|水位|DN\s*\d", text, re.I)
-    ):
-        return "plan"
-    if re.search(r"比较|对比|差异|区别", text) and (
-        _named_method(text) or re.search(r"检测方式|检测方法", text)
+    if _COMPUTE.search(text):
+        return "compute"
+    if _COMPARE.search(text) and (
+        _named_method(text)
+        or re.search(r"检测方式|检测方法|检测方案|方案", text)
     ):
         return "compare"
-    if "检查井" in text and re.search(r"先后|之前|之后|顺序", text):
-        return "explain"
-    if re.search(r"为何|为什么|能否单独", text) and re.search(r"声纳|检查井", text):
-        return "explain"
-    return "qa"
+    return "retrieve"
 
 
 def normalize_citations(text: str) -> str:

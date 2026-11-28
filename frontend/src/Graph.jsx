@@ -21,10 +21,9 @@ const NODE_H = 56;
 const GRAPH = {
   nodes: [
     { id: "START", title: "开始", kind: "terminal" },
-    { id: "recognize", title: "意图识别", note: "闲聊可结束" },
-    { id: "rewrite", title: "问题改写", note: "检索查询", lane: "qa" },
-    { id: "react", title: "create_agent", note: "检索+草稿", lane: "qa" },
-    { id: "validate", title: "回答校验", note: "裁剪跑题", lane: "qa" },
+    { id: "recognize", title: "意图识别", note: "四类分类" },
+    { id: "rewrite", title: "问题改写", note: "检索查询", lane: "retrieve" },
+    { id: "react", title: "create_agent", note: "检索+定稿", lane: "retrieve" },
     { id: "END", title: "结束", kind: "terminal" },
   ],
   edges: [
@@ -32,8 +31,7 @@ const GRAPH = {
     ["recognize", "rewrite"],
     ["recognize", "END"],
     ["rewrite", "react"],
-    ["react", "validate"],
-    ["validate", "END"],
+    ["react", "END"],
   ],
 };
 
@@ -67,8 +65,7 @@ function layoutGraph(direction = "TB") {
     target,
     type: "smoothstep",
     animated:
-      (source === "rewrite" && target === "react") ||
-      (source === "react" && target === "validate"),
+      source === "rewrite" && target === "react",
     markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: "#176954" },
     style: { stroke: "#176954", strokeWidth: 1.6 },
   }));
@@ -161,7 +158,7 @@ export function Graph() {
     <figure className="graph topology">
       <figcaption>
         使用 <code>@xyflow/react</code> + <code>dagre</code> 自动排版，边关系对齐
-        <code>compile_graph()</code>。意图识别 → 改写 → ReAct 草稿 → 回答校验；闲聊直接结束。
+        <code>compile_graph()</code>。意图四类：条文检索、方法/方案对比、计算问数与可视化、闲聊；闲聊直接结束。
       </figcaption>
       <ReactFlowProvider>
         <FlowCanvas />

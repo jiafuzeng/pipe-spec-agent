@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from app.agent.graph import get_graph
 from app.agent.utils.agent import RECURSION_LIMIT
+from log import bind_turn, reset_turn, trace
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -67,6 +68,41 @@ async def list_sessions(request: Request):
     return rows
 
 
+async def _run_events(store, run_id: str) -> list:
+    if not run_id:
+        return []
+    rows = sorted(
+        await store.asearch(("events", run_id), limit=10000),
+        key=lambda item: item.key,
+    )
+    return [item.value for item in rows]
+
+
+async def _run_info(store, run_id: str) -> dict:
+    if not run_id:
+        return {}
+    item = await store.aget(("runs",), run_id)
+    return item.value or {} if item else {}
+
+
+async def _message(store, turn) -> dict:
+    value = turn.value or {}
+    run_id = value.get("run")
+    info, events = await asyncio.gather(
+        _run_info(store, run_id),
+        _run_events(store, run_id),
+    )
+    return dict(
+        turn_id=turn.key,
+        run_id=run_id,
+        run_status=info.get("status"),
+        subject_id=value.get("subject") or "default",
+        text=value.get("message") or "",
+        role="user",
+        events=events,
+    )
+
+
 @router.get("/api/v1/sessions/{sid}")
 async def get_session(sid: str, request: Request):
     store = _store(request)
@@ -77,16 +113,7 @@ async def get_session(sid: str, request: Request):
         await store.asearch(("turns", sid), limit=10000),
         key=lambda row: (row.value or {}).get("created_at") or row.key,
     )
-    messages = [
-        dict(
-            turn_id=t.key,
-            run_id=(t.value or {}).get("run"),
-            subject_id=(t.value or {}).get("subject") or "default",
-            text=(t.value or {}).get("message") or "",
-            role="user",
-        )
-        for t in turns
-    ]
+    messages = await asyncio.gather(*[_message(store, turn) for turn in turns])
     last = messages[-1] if messages else None
     return dict(
         session_id=sid,
@@ -201,7 +228,23 @@ async def turn(sid: str, body: Message, request: Request):
 
     async def receive():
         seq = -1
+        status = "running"
+
+        async def persist_run(next_status=None):
+            await store.aput(
+                ("runs",),
+                run_id,
+                {
+                    "sid": sid,
+                    "subject": body.subject_id,
+                    "status": next_status or status,
+                    "event_seq": seq,
+                },
+            )
+
+        token = bind_turn(turn_id, session=sid, run=run_id)
         try:
+            trace("turn.start", query=query)
             stream = graph.astream(
                 {"query": query},
                 {
@@ -234,18 +277,16 @@ async def turn(sid: str, body: Message, request: Request):
                 )
                 await asyncio.gather(
                     store.aput(("events", run_id), f"{seq:08d}", event),
-                    store.aput(
-                        ("runs",),
-                        run_id,
-                        {
-                            "sid": sid,
-                            "subject": body.subject_id,
-                            "status": status,
-                            "event_seq": seq,
-                        },
-                    ),
+                    persist_run(),
                 )
-        except Exception:
+                await asyncio.sleep(0)
+            if status == "running":
+                status = "completed"
+                await persist_run()
+            trace("turn.end", events=seq + 1)
+        except Exception as exc:
+            status = "failed"
+            trace("turn.error", error=type(exc).__name__, events=seq + 1)
             log.exception("turn %s failed", turn_id)
             seq += 1
             event = dict(
@@ -259,20 +300,18 @@ async def turn(sid: str, body: Message, request: Request):
                 session_id=sid,
             )
             await store.aput(("events", run_id), f"{seq:08d}", event)
-            await store.aput(
-                ("runs",),
-                run_id,
-                {
-                    "sid": sid,
-                    "subject": body.subject_id,
-                    "status": "failed",
-                    "event_seq": seq,
-                },
-            )
+            await persist_run()
             yield (
                 f"event: error\n"
                 f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
             )
+        finally:
+            if status == "running":
+                try:
+                    await persist_run("interrupted")
+                except Exception:
+                    pass
+            reset_turn(token)
 
     return StreamingResponse(
         receive(),

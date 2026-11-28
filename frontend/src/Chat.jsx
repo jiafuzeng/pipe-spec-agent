@@ -14,10 +14,22 @@ const names = [
 const toolNames = {
   search_clauses: "检索条款",
 };
+const INTENT_LABELS = {
+  retrieve: "基础条文与概念检索",
+  compare: "检测方法与方案对比",
+  compute: "计算推理、智能问数与可视化",
+  chitchat: "闲聊",
+};
 
 function thinkLine(event) {
   const data = event.data;
   if (event.type === "plan_step") {
+    if (data.intent) {
+      return (
+        data.text ||
+        "意图识别：" + (data.intent_label || INTENT_LABELS[data.intent] || data.intent)
+      );
+    }
     const questions = data.questions?.filter(Boolean);
     return data.text + (questions?.length ? "：" + questions.join("、") : "");
   }
@@ -30,7 +42,11 @@ function thinkLine(event) {
   return name + query + (data.summary ? " · " + data.summary : " · " + status);
 }
 
-function Think({ lines, live }) {
+function Think({ events, live }) {
+  const items = (events || [])
+    .map((event) => ({ event, text: thinkLine(event) }))
+    .filter((item) => item.text);
+  const lines = items.map((item) => item.text);
   const [open, setOpen] = useState(live);
   const [typed, setTyped] = useState("");
   const [lineIndex, setLineIndex] = useState(0);
@@ -81,11 +97,11 @@ function Think({ lines, live }) {
       if (count >= chars.length) window.clearInterval(timer);
     }, 28);
     return () => window.clearInterval(timer);
-  }, [live, lines, linesKey, reduceMotion]);
+  }, [live, linesKey, reduceMotion]);
   useEffect(() => {
     if (!live || !body.current) return;
     body.current.scrollTop = body.current.scrollHeight;
-  }, [live, typed, lineIndex, lines]);
+  }, [live, typed, lineIndex, linesKey]);
   const shown = !live
     ? lines
     : lines.length === 0
@@ -314,7 +330,7 @@ function Turn({ turn, live, cited, selected, onCite, onSelect }) {
   const trace = turn.events.filter((e) =>
     ["tool_call", "plan_step"].includes(e.type),
   );
-  const thoughts = trace.map(thinkLine).filter(Boolean);
+  const thoughts = trace;
   const answers = turn.events.filter((e) => e.type === "answer");
   const latestAnswer = answers[answers.length - 1];
   function answerDisplay(text) {
@@ -388,7 +404,7 @@ function Turn({ turn, live, cited, selected, onCite, onSelect }) {
           ) : (
             answerDisplay(raw)
           )}
-          {partial && <i className="caret" />}
+          {partial && live && <i className="caret" />}
         </div>
         {cites.length > 0 && (
           <div className="reply-cites">
@@ -402,8 +418,9 @@ function Turn({ turn, live, cited, selected, onCite, onSelect }) {
   return (
     <article className="turn">
       <h3>{turn.question}</h3>
-      {(live || thoughts.length > 0) && <Think lines={thoughts} live={live} />}
-      {latestAnswer && renderAnswer(eventPayload(latestAnswer), "answer")}
+      {(live || thoughts.length > 0) && <Think events={thoughts} live={live} />}
+      {latestAnswer &&
+        renderAnswer(eventPayload(latestAnswer), "answer")}
       {!live &&
         turn.events.map(({ type, data }, i) => {
           if (type !== "error") return null;
@@ -454,6 +471,7 @@ export function Chat() {
     [sessions, setSessions] = useState([]),
     [input, setInput] = useState(""),
     [busy, setBusy] = useState(false),
+    [waiting, setWaiting] = useState(false),
     [status, setStatus] = useState(""),
     [editing, setEditing] = useState(null),
     [draft, setDraft] = useState(""),
@@ -495,50 +513,42 @@ export function Chat() {
   const subject = chat.subject || "default";
   const editor = useRef(null),
     sending = useRef(false),
-    runGen = useRef(0);
+    runGen = useRef(0),
+    abort = useRef(null);
   const openSession = useRef(async () => {});
   openSession.current = async (session) => {
     const snapshot = await request("/api/v1/sessions/" + session);
     rememberSession(session);
-    setChat({ session, turns: [], subject: snapshot.subject_id || "default" });
     const messages = snapshot.messages || [];
-    const cursors = new Map();
-    const restored = messages.map((m) => ({
-      id: m.turn_id,
-      question: m.text,
-      subject: m.subject_id,
-      events: [],
-    }));
-    let running;
-    do {
-      running = false;
-      for (const run of new Set(messages.map((m) => m.run_id))) {
-        const info = await request("/api/v1/runs/" + run);
-        const replay = await request(
-          "/api/v1/runs/" + run + "/events?after_event_id=" + (cursors.get(run) ?? -1),
+    const bundled = messages.every(
+      (item) => !item.run_id || Array.isArray(item.events),
+    );
+    const eventPacks = bundled
+      ? messages.map((item) => item.events || [])
+      : await Promise.all(
+          messages.map(async (item) => {
+            if (!item.run_id) return [];
+            const replay = await request("/api/v1/runs/" + item.run_id + "/events");
+            return replay.events || [];
+          }),
         );
-        for (const e of replay.events) {
-          restored.find((t) => t.id === e.turn_id)?.events.push({ type: e.type, data: e });
-          cursors.set(run, e.event_id);
-        }
-        running ||= info.status === "running";
-      }
-      setChat((prev) =>
-        prev.session === session
-          ? {
-              ...prev,
-              subject: snapshot.subject_id || prev.subject,
-              turns: restored.map((t) => ({ ...t, events: [...t.events] })),
-            }
-          : prev,
-      );
-      if (running) await new Promise((resolve) => setTimeout(resolve, 500));
-    } while (running);
+    setChat({
+      session,
+      subject: snapshot.subject_id || "default",
+      turns: messages.map((item, index) => ({
+        id: item.turn_id,
+        question: item.text,
+        subject: item.subject_id,
+        events: (eventPacks[index] || []).map((event) => ({
+          type: event.type,
+          data: event,
+        })),
+      })),
+    });
   };
   useEffect(() => {
     if (offline) return;
     let cancelled = false;
-    setBusy(true);
     listSessions()
       .then(async (rows) => {
         if (cancelled) return;
@@ -582,20 +592,25 @@ export function Chat() {
       return [next, ...rows.filter((row) => row.session_id !== session)];
     });
   }
+  function releaseComposer() {
+    sending.current = false;
+    setWaiting(false);
+  }
   async function send(message) {
     message = message.trim();
-    if (!message || busy || sending.current || offline) return;
+    if (!message || offline) return;
+    abort.current?.abort();
+    const ac = new AbortController();
+    abort.current = ac;
     const myGen = ++runGen.current;
     sending.current = true;
-    setBusy(true);
+    setWaiting(true);
     const id = crypto.randomUUID();
     let session = chat.session;
     const event = (e) => {
       if (runGen.current !== myGen) return;
-      if (isFinalAnswer(e) || e.type === "error") {
-        sending.current = false;
-        setBusy(false);
-      }
+      const kind = String(e?.type || e?.data?.type || "").trim();
+      if (kind === "answer" || kind === "error") releaseComposer();
       setChat((prev) => ({
         ...prev,
         turns: prev.turns.map((t) => {
@@ -626,15 +641,18 @@ export function Chat() {
           setChat((prev) => ({ ...prev, session }));
           rememberSession(session);
         }
-        if (await streamTurn(session, message, event, subject)) {
+        if (await streamTurn(session, message, event, subject, ac.signal)) {
           if (runGen.current !== myGen) return;
           rememberListed(session, message);
-          try {
-            setSessions(await listSessions());
-            setStatus("");
-          } catch {
-            setStatus("暂时无法读取会话列表");
-          }
+          listSessions()
+            .then((rows) => {
+              if (runGen.current !== myGen) return;
+              setSessions(rows);
+              setStatus("");
+            })
+            .catch(() => {
+              if (runGen.current === myGen) setStatus("暂时无法读取会话列表");
+            });
           return;
         }
         if (runGen.current !== myGen) return;
@@ -647,19 +665,20 @@ export function Chat() {
       }
       throw Error("无法恢复会话");
     } catch (e) {
+      if (e?.name === "AbortError") return;
       event({ type: "error", data: { text: e.message } });
     } finally {
-      if (runGen.current === myGen) {
-        sending.current = false;
-        setBusy(false);
-      }
+      if (abort.current === ac) abort.current = null;
+      if (runGen.current === myGen) releaseComposer();
     }
   }
   function startNewSession() {
+    abort.current?.abort();
     runGen.current += 1;
     sending.current = false;
     showChat();
     setBusy(false);
+    setWaiting(false);
     setChat({ session: null, turns: [] });
     rememberSession(null);
     setStatus("");
@@ -746,6 +765,8 @@ export function Chat() {
     showChat();
     setSource(null);
     if (busy || session === chat.session) return;
+    abort.current?.abort();
+    runGen.current += 1;
     setBusy(true);
     try {
       await openSession.current(session);
@@ -900,7 +921,7 @@ export function Chat() {
                 selected={Boolean(active && active.turn.id === t.id)}
                 onCite={(index) => setSource({ turnId: t.id, index })}
                 onSelect={(index) => setSource({ turnId: t.id, index })}
-                live={busy && !turnFinished(t.events) && !hasVisibleAnswer(t.events)}
+                live={waiting && !turnFinished(t.events) && !hasVisibleAnswer(t.events)}
               />
             ))}
           </div>
@@ -918,12 +939,9 @@ export function Chat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (
-                !e.nativeEvent.isComposing &&
-                (e.metaKey || e.ctrlKey) &&
-                e.key === "Enter"
-              )
-                send(input);
+              if (e.nativeEvent.isComposing || e.key !== "Enter" || e.shiftKey) return;
+              e.preventDefault();
+              send(input);
             }}
             placeholder="今天帮你查什么？输入检测条件或条款号"
             maxLength={4000}
@@ -931,11 +949,12 @@ export function Chat() {
           <div className="composer-foot">
             {input.length > 0 && <small>{input.length} / 4000</small>}
             <button
+              type="submit"
               className="primary"
-              aria-label={busy ? "处理中" : "发送问题"}
-              disabled={busy || offline || !input.trim()}
+              aria-label="发送问题"
+              disabled={offline || !input.trim()}
             >
-              {busy ? "…" : "↑"}
+              ↑
             </button>
           </div>
         </form>

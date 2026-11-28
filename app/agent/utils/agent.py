@@ -7,6 +7,7 @@ from pydantic import SecretStr
 from app import settings
 from app.agent.prompts import AGENT_PROMPT
 from app.agent.tools import search_clauses_tool
+from log import chat_callbacks
 
 RECURSION_LIMIT = 20
 
@@ -20,6 +21,8 @@ def build_search_agent(*, intent: str, label: str, search_query: str):
             base_url=settings.CHAT_BASE_URL,
             temperature=0,
             timeout=settings.CHAT_TIMEOUT,
+            max_retries=0,
+            callbacks=chat_callbacks(),
         ),
         tools=[search_clauses_tool],
         system_prompt=(

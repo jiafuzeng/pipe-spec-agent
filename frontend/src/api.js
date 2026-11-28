@@ -22,23 +22,45 @@ export async function deleteSession(id) {
   const response = await fetch("/api/v1/sessions/" + id, { method: "DELETE" });
   if (!response.ok) throw new Error("删除失败（" + response.status + "）");
 }
-export async function request(path, options) {
-  const response = await fetch(path, options);
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    throw new Error(
-      typeof error.detail === "string"
-        ? error.detail
-        : "请求失败（" + response.status + "）",
-    );
-  }
-  return response.json();
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
-export async function streamTurn(session, message, onEvent, subject = "default") {
+
+export async function request(path, options = {}) {
+  const method = String(options.method || "GET").toUpperCase();
+  const tries = method === "GET" || method === "HEAD" ? 5 : 1;
+  let last;
+  for (let i = 0; i < tries; i++) {
+    try {
+      const response = await fetch(path, options);
+      if (response.ok) return response.json();
+      const error = await response.json().catch(() => ({}));
+      last = new Error(
+        typeof error.detail === "string"
+          ? error.detail
+          : "请求失败（" + response.status + "）",
+      );
+      if (response.status < 500) throw last;
+    } catch (error) {
+      last = error instanceof Error ? error : new Error("请求失败");
+      if (i === tries - 1) throw last;
+    }
+    await wait(350 * (i + 1));
+  }
+  throw last;
+}
+export async function streamTurn(
+  session,
+  message,
+  onEvent,
+  subject = "default",
+  signal,
+) {
   const res = await fetch("/api/v1/sessions/" + session + "/turns", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message, subject_id: subject }),
+    signal,
   });
   if (res.status === 404) return false;
   if (!res.ok) throw new Error("问答请求失败（" + res.status + "）");
@@ -51,10 +73,13 @@ export async function streamTurn(session, message, onEvent, subject = "default")
     while ((end = buffer.indexOf("\n\n")) >= 0) {
       const lines = buffer.slice(0, end).split("\n");
       buffer = buffer.slice(end + 2);
-      const type = lines.find((line) => line.startsWith("event: "));
-      const data = lines.find((line) => line.startsWith("data: "));
+      const type = lines.find((line) => line.startsWith("event:"));
+      const data = lines.find((line) => line.startsWith("data:"));
       if (type && data) {
-        const event = { type: type.slice(7), data: JSON.parse(data.slice(6)) };
+        const event = {
+          type: type.slice(type.indexOf(":") + 1).trim(),
+          data: JSON.parse(data.slice(data.indexOf(":") + 1).trim()),
+        };
         onEvent(event);
         if (event.type === "answer") {
           await new Promise((resolve) => requestAnimationFrame(resolve));

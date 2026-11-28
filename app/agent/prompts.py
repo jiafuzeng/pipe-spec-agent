@@ -1,14 +1,14 @@
 """Agent 节点与 create_agent 使用的提示文案。"""
 
 CHITCHAT_REPLY = (
-    "我是排水管道规程助手，可问 CJJ 181—2012 条款、适用条件或检测方案。"
+    "我是排水管道规程助手，可问 CJJ 181—2012 条文与概念、检测方法与方案对比，"
+    "或计算、问数和可视化。"
 )
 
 INTENT_LABEL = {
-    "qa": "规程问答",
-    "compare": "方法对比",
-    "explain": "原理说明",
-    "plan": "检测方案",
+    "retrieve": "基础条文与概念检索",
+    "compare": "检测方法与方案对比",
+    "compute": "计算推理、智能问数与可视化",
     "chitchat": "闲聊",
 }
 
@@ -29,6 +29,8 @@ ANSWER_FORMAT = """回答结构固定为 Markdown（不要代码围栏 / HTML / 
 
 AGENT_PROMPT = f"""你是排水管道规程助手，只依据 CJJ 181—2012 作答。
 缺依据时调用 search_clauses；依据充足后再总结。不编造。
+
+按当前意图作答：retrieve 讲清条文与概念；compare 对照方法或方案差异；compute 给出计算、问数或如何读图/读表，缺数据就说缺。
 
 检索纪律：search_clauses 最多 2 次。一旦工具已返回相关条款，必须立刻停止调用工具并作答，不要反复改写查询。
 

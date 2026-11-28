@@ -23,7 +23,7 @@ _STOP = {
     "规定",
     "基本",
 }
-_MAX_CLAUSES = 8
+_MAX_CLAUSES = 4
 
 
 def compact(text: str) -> str:
@@ -71,34 +71,34 @@ def _expand(item: dict) -> list[dict]:
 
 def compress_item(item: dict, query: str = "") -> list[dict]:
     """按 citation_spans 拆条款；有查询时只留对得上的，不裁切条文本身。"""
-    rows = _expand(item)
-    if not query or len(rows) <= 1:
-        return rows
-    scored = [(_score(query, row["clause_no"], row["quote"]), row) for row in rows]
-    best = max(score for score, _ in scored)
-    if best <= 0:
-        target = str(item.get("clause_no") or "")
-        for _, row in scored:
-            if row["clause_no"] == target:
-                return [row]
-        return [scored[0][1]]
-    return [
-        row
-        for score, row in scored
-        if score == best or (score >= 2 and score * 2 >= best)
-    ]
+    return compress_items([item], query)
 
 
 def compress_items(items: list, query: str = "") -> list[dict]:
+    scored: list[tuple[int, dict]] = []
+    for item in items or []:
+        eid = item.get("evidence_id") or ""
+        for row in _expand(item):
+            score = _score(query, row["clause_no"], row["quote"]) if query else 1
+            scored.append((score, dict(row, evidence_id=eid)))
+    scored.sort(key=lambda pair: pair[0], reverse=True)
     packed: list[dict] = []
     seen: set[str] = set()
-    for item in items or []:
-        for row in compress_item(item, query):
-            clause = row["clause_no"]
-            if clause in seen:
-                continue
-            seen.add(clause)
-            packed.append(row)
-            if len(packed) >= _MAX_CLAUSES:
-                return packed
+    for score, row in scored:
+        clause = row["clause_no"]
+        if clause in seen:
+            continue
+        if query and packed and score <= 0:
+            continue
+        seen.add(clause)
+        packed.append(row)
+        if len(packed) >= _MAX_CLAUSES:
+            break
     return packed
+
+
+def render_clauses(rows: list[dict]) -> str:
+    """模型可见的紧凑条文，一行一条。"""
+    if not rows:
+        return "未命中相关条款原文。"
+    return "\n".join(f"{row['clause_no']} {row['quote']}" for row in rows)

@@ -12,6 +12,7 @@ from app.agent.tools import (
     emit,
     reset_evidence,
     reset_stream_writer,
+    search_evidence,
 )
 from app.agent.utils.agent import build_search_agent, react_recursion_limit
 from app.agent.utils.messages import last_ai_text
@@ -21,32 +22,45 @@ from app.agent.utils.reply import (
     emit_final_answer,
     emit_partial_answer,
 )
-from app.agent.utils.validate import validate_answer
+from log import trace
 
 
 def _is_timeout(exc: BaseException) -> bool:
     seen: set[int] = set()
-    cur: BaseException | None = exc
-    while cur is not None and id(cur) not in seen:
+    stack: list[BaseException] = [exc]
+    while stack:
+        cur = stack.pop()
+        if id(cur) in seen:
+            continue
         seen.add(id(cur))
         if "timeout" in type(cur).__name__.lower():
             return True
-        cur = cur.__cause__ or cur.__context__
+        if cur.__cause__ is not None:
+            stack.append(cur.__cause__)
+        if cur.__context__ is not None:
+            stack.append(cur.__context__)
+        if isinstance(cur, BaseExceptionGroup):
+            stack.extend(cur.exceptions)
     return False
 
 
 async def node_recognize(state: State):
-    """先规则判意图；仅规则落成 qa 时再用 LLM。需检索则进入改写。"""
+    """先规则判意图；仅规则落成 retrieve 时再用 LLM。需检索则进入改写。"""
     q = state["query"]
     intent = classify_turn(q)
-    if intent == "qa":
+    if intent == "retrieve":
         proposal = await recognize_intent(q)
         if proposal:
             intent = proposal
     label = INTENT_LABEL.get(intent, intent)
+    trace("recognize", intent=intent, query=q)
     emit(
         "plan_step",
-        dict(text=f"意图识别：{label}（{intent}）", intent=intent),
+        dict(
+            text=f"意图识别：{label}",
+            intent=intent,
+            intent_label=label,
+        ),
     )
     if intent == "chitchat":
         emit(
@@ -66,13 +80,13 @@ async def node_recognize(state: State):
 async def node_rewrite(state: State):
     """将原问题改写为检索查询，再进入 ReAct。"""
     q = state["query"]
-    intent = state.get("intent") or "qa"
+    intent = state.get("intent") or "retrieve"
     search_query = await rewrite_query(q, intent) or q
+    trace("rewrite.node", search_query=search_query)
     emit(
         "plan_step",
         dict(
             text="问题改写为检索查询",
-            intent=intent,
             original=q,
             search_query=search_query,
             questions=[search_query],
@@ -85,23 +99,24 @@ async def node_react(state: State):
     """create_agent 检索并生成草稿，交给校验节点定稿。"""
     q = state["query"]
     search_query = state.get("search_query") or q
-    intent = state.get("intent") or "qa"
+    intent = state.get("intent") or "retrieve"
     label = INTENT_LABEL.get(intent, intent)
     collected: list[dict] = []
     writer_token = bind_stream_writer()
     token = bind_evidence(collected)
     try:
+        trace("react.start", intent=intent, search_query=search_query)
         emit(
             "plan_step",
             dict(
                 text=f"ReAct：启动检索智能体（意图 {label}，查询「{search_query}」）",
-                intent=intent,
             ),
         )
         agent = build_search_agent(
             intent=intent, label=label, search_query=search_query
         )
         text = ""
+        recovered = False
         try:
             async for mode, chunk in agent.astream(
                 {
@@ -127,39 +142,39 @@ async def node_react(state: State):
                     if text:
                         emit_partial_answer(text, collected)
         except GraphRecursionError:
+            recovered = True
+            trace("react.limit", evidence=len(collected))
             emit(
                 "plan_step",
                 dict(text="ReAct：达到步数上限，改用已检索条款整理"),
             )
         except Exception as exc:
             if not _is_timeout(exc):
+                trace("react.error", error=type(exc).__name__)
                 raise
+            recovered = True
+            trace("react.timeout", error=type(exc).__name__, evidence=len(collected))
             emit(
                 "plan_step",
                 dict(text="ReAct：模型超时，改用已检索条款整理"),
             )
+        if recovered and not collected:
+            items, _ = await search_evidence(search_query)
+            collected.extend(items)
+            for item in items:
+                emit("evidence", item)
+            trace("react.recover_search", hits=len(items))
         draft = text or grounded_summary(collected) or REFUSAL
+        trace("react.done", evidence=len(collected), draft=len(draft or ""))
         emit_draft_ready(draft, collected)
-        return dict(
-            draft_answer=draft,
-            evidence=collected,
-            route="validate",
-        )
+        return emit_final_answer(draft, collected)
     finally:
         reset_evidence(token)
         reset_stream_writer(writer_token)
 
 
 async def node_validate(state: State):
-    """校验草稿是否紧扣问题，裁掉跑题要点与无关证据后定稿。"""
-    q = state["query"]
+    """定稿已在 react 发出；此节点只做收尾，不再阻塞 SSE。"""
     draft = state.get("draft_answer") or REFUSAL
     evidence = list(state.get("evidence") or [])
-    emit("plan_step", dict(text="回答校验：对照问题裁剪要点与引用"))
-    text, kept, dropped = await validate_answer(q, draft, evidence)
-    note = ""
-    if dropped:
-        note = "已去掉：" + "；".join(dropped[:3])
-    elif len(kept) < len(evidence):
-        note = f"引用 {len(evidence)}→{len(kept)} 条"
-    return emit_final_answer(text, kept, note=note)
+    return emit_final_answer(draft, evidence)

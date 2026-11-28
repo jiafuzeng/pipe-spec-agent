@@ -1,7 +1,6 @@
-import json
 import unittest
 
-from app.agent.utils.compress import compress_item, compress_items
+from app.agent.utils.compress import compress_item, compress_items, render_clauses
 from app.knowledge.retrieval import citation_spans
 
 CHAPTER = """# 3 基本规定
@@ -33,8 +32,9 @@ class CompressTests(unittest.TestCase):
         self.assertIn("1a～2a", body)
         self.assertIn("管龄 30a", body)
         self.assertNotIn("资质", body)
-        blob = json.dumps(packed, ensure_ascii=False, separators=(",", ":"))
-        self.assertLess(len(blob), len(CHAPTER))
+        self.assertLess(len(body), len(CHAPTER))
+        self.assertIn("3.0.4", render_clauses(packed))
+        self.assertNotIn("资质", render_clauses(packed))
 
     def test_query_keeps_other_clause_in_same_chunk(self):
         packed = compress_items([self._item()], "检测单位应具备什么资质")
@@ -44,4 +44,5 @@ class CompressTests(unittest.TestCase):
 
     def test_plain_quote_is_compacted(self):
         rows = compress_item({"clause_no": "1.0.1", "quote": "1.0.1  \n制定本规程。"})
-        self.assertEqual(rows, [{"clause_no": "1.0.1", "quote": "1.0.1 制定本规程。"}])
+        self.assertEqual(rows[0]["clause_no"], "1.0.1")
+        self.assertEqual(rows[0]["quote"], "1.0.1 制定本规程。")

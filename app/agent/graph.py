@@ -25,7 +25,7 @@ def compile_graph(checkpointer=None, store=None):
         "recognize", route, {"rewrite": "rewrite", "end": END}
     )
     g.add_edge("rewrite", "react")
-    g.add_edge("react", "validate")
+    g.add_conditional_edges("react", route, {"validate": "validate", "end": END})
     g.add_edge("validate", END)
     return g.compile(checkpointer=checkpointer, store=store)
 
