@@ -1,5 +1,6 @@
 """问答入口：session_id = LangGraph thread_id。"""
 
+import asyncio
 import json
 import logging
 import uuid
@@ -223,20 +224,22 @@ async def turn(sid: str, body: Message, request: Request):
                     subject_id=body.subject_id,
                     step_id=f"{turn_id}-{seq}",
                 )
-                await store.aput(("events", run_id), f"{seq:08d}", event)
-                await store.aput(
-                    ("runs",),
-                    run_id,
-                    {
-                        "sid": sid,
-                        "subject": body.subject_id,
-                        "status": status,
-                        "event_seq": seq,
-                    },
-                )
                 yield (
                     f"event: {event['type']}\n"
                     f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                )
+                await asyncio.gather(
+                    store.aput(("events", run_id), f"{seq:08d}", event),
+                    store.aput(
+                        ("runs",),
+                        run_id,
+                        {
+                            "sid": sid,
+                            "subject": body.subject_id,
+                            "status": status,
+                            "event_seq": seq,
+                        },
+                    ),
                 )
         except Exception:
             log.exception("turn %s failed", turn_id)
@@ -267,4 +270,12 @@ async def turn(sid: str, body: Message, request: Request):
                 f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
             )
 
-    return StreamingResponse(receive(), media_type="text/event-stream")
+    return StreamingResponse(
+        receive(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )

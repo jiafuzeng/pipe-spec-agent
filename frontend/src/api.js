@@ -56,8 +56,7 @@ export async function streamTurn(session, message, onEvent, subject = "default")
       if (type && data) {
         const event = { type: type.slice(7), data: JSON.parse(data.slice(6)) };
         onEvent(event);
-        // Let React paint partial answers instead of batching a whole burst.
-        if (event.type === "answer" && event.data?.partial === true) {
+        if (event.type === "answer") {
           await new Promise((resolve) => requestAnimationFrame(resolve));
         }
       }

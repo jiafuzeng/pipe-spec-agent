@@ -327,23 +327,27 @@ function Turn({ turn, live, cited, selected, onCite, onSelect }) {
       seen.add(index);
       indexes.push(index);
     }
-    for (const id of data?.citations || []) {
-      push(evidence.findIndex((item) => item.evidence_id === id));
+    const wanted = Array.isArray(data?.citations)
+      ? data.citations.filter(Boolean)
+      : [];
+    for (const id of wanted) {
+      push(
+        evidence.findIndex(
+          (item) => item.evidence_id === id || item.clause_no === id,
+        ),
+      );
     }
     for (const match of String(text).matchAll(/〔([^〕]+)〕/g)) {
       push(evidence.findIndex((item) => item.clause_no === match[1]));
     }
-    // 有 citations 字段时只展示校验后的引用，不再回退到全部 evidence
-    if (Array.isArray(data?.citations)) return indexes;
-    if (!indexes.length) {
-      const byClause = new Set();
-      evidence.forEach((item, index) => {
-        const key = item.clause_no || item.evidence_id || index;
-        if (byClause.has(key)) return;
-        byClause.add(key);
-        push(index);
-      });
-    }
+    if (indexes.length) return indexes;
+    const byClause = new Set();
+    evidence.forEach((item, index) => {
+      const key = item.clause_no || item.evidence_id || index;
+      if (byClause.has(key)) return;
+      byClause.add(key);
+      push(index);
+    });
     return indexes;
   }
   function citeButton(index) {
@@ -365,12 +369,12 @@ function Turn({ turn, live, cited, selected, onCite, onSelect }) {
       JSON.stringify(data, null, 2);
     const partial = data.partial === true;
     const asMarkdown = data.format === "markdown" || /[*_`#\-]/.test(String(raw));
-    const cites = !partial ? citedIndexes(raw, data) : [];
+    const cites = citedIndexes(raw, data);
     return (
       <div className={"reply-block" + (partial ? " streaming" : "")} key={key}>
         <div
           className={"reply" + (selected ? " selected" : "") + (asMarkdown ? " markdown" : "")}
-          onClick={() => !partial && evidence.length && onSelect(0)}
+          onClick={() => evidence.length && onSelect(0)}
         >
           {asMarkdown ? (
             <div
@@ -486,7 +490,8 @@ export function Chat() {
   }
   const subject = chat.subject || "default";
   const editor = useRef(null),
-    sending = useRef(false);
+    sending = useRef(false),
+    runGen = useRef(0);
   const openSession = useRef(async () => {});
   openSession.current = async (session) => {
     const snapshot = await request("/api/v1/sessions/" + session);
@@ -558,16 +563,31 @@ export function Chat() {
   }, []);
   function choose(i) {
     setInput(examples[i]);
-    editor.current.focus();
+    editor.current?.focus();
+  }
+  function rememberListed(session, message) {
+    const now = new Date().toISOString();
+    setSessions((rows) => {
+      const current = rows.find((row) => row.session_id === session);
+      const next = {
+        session_id: session,
+        title: current?.title || null,
+        last_message: message,
+        last_activity_at: now,
+      };
+      return [next, ...rows.filter((row) => row.session_id !== session)];
+    });
   }
   async function send(message) {
     message = message.trim();
     if (!message || busy || sending.current || offline) return;
+    const myGen = ++runGen.current;
     sending.current = true;
     setBusy(true);
     const id = crypto.randomUUID();
     let session = chat.session;
-    const event = (e) =>
+    const event = (e) => {
+      if (runGen.current !== myGen) return;
       setChat((prev) => ({
         ...prev,
         turns: prev.turns.map((t) => {
@@ -582,6 +602,7 @@ export function Chat() {
           return { ...t, events: [...t.events, e] };
         }),
       }));
+    };
     setChat((prev) => ({
       ...prev,
       turns: [...prev.turns, { id, question: message, subject, events: [], fresh: true }],
@@ -589,13 +610,17 @@ export function Chat() {
     setInput("");
     try {
       for (let i = 0; i < 2; i++) {
+        if (runGen.current !== myGen) return;
         if (!session) {
           session = (await request("/api/v1/sessions", { method: "POST" }))
             .session_id;
+          if (runGen.current !== myGen) return;
           setChat((prev) => ({ ...prev, session }));
           rememberSession(session);
         }
         if (await streamTurn(session, message, event, subject)) {
+          if (runGen.current !== myGen) return;
+          rememberListed(session, message);
           try {
             setSessions(await listSessions());
             setStatus("");
@@ -604,6 +629,7 @@ export function Chat() {
           }
           return;
         }
+        if (runGen.current !== myGen) return;
         if (chat.session)
           event({
             type: "error",
@@ -615,18 +641,25 @@ export function Chat() {
     } catch (e) {
       event({ type: "error", data: { text: e.message } });
     } finally {
-      sending.current = false;
-      setBusy(false);
+      if (runGen.current === myGen) {
+        sending.current = false;
+        setBusy(false);
+      }
     }
   }
-  function reset() {
+  function startNewSession() {
+    runGen.current += 1;
+    sending.current = false;
     showChat();
+    setBusy(false);
     setChat({ session: null, turns: [] });
     rememberSession(null);
     setStatus("");
     setInput("");
     setSource(null);
-    editor.current.focus();
+    setMenu(null);
+    setEditing(null);
+    editor.current?.focus();
   }
   function sessionLabel(item) {
     return item.title || item.last_message;
@@ -693,7 +726,7 @@ export function Chat() {
       setEditing(null);
       setMenu(null);
       setStatus("");
-      if (chat.session === id) reset();
+      if (chat.session === id) startNewSession();
     } catch {
       setStatus("暂时无法删除会话");
     }
@@ -787,7 +820,7 @@ export function Chat() {
       style={active ? { "--source": sourceWidth + "px" } : undefined}
     >
       {fresh && createPortal(
-        <button type="button" className="new-session" disabled={busy} onClick={reset}>
+        <button type="button" className="new-session" onClick={startNewSession}>
           <span aria-hidden="true">＋</span>
           新建会话
         </button>,
@@ -799,10 +832,9 @@ export function Chat() {
           <button
             type="button"
             role="menuitem"
-            disabled={busy}
             onClick={() => {
               closeMenu();
-              reset();
+              startNewSession();
             }}
           >
             新建会话
