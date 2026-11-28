@@ -11,6 +11,7 @@ from contextvars import ContextVar
 from langchain_core.tools import tool
 from langgraph.config import get_stream_writer
 
+from app.agent.utils.compress import compress_items
 from app.knowledge.retrieval import search_clauses
 
 _evidence: ContextVar[list | None] = ContextVar("agent_evidence", default=None)
@@ -88,8 +89,9 @@ async def search_clauses_tool(query: str) -> str:
     if not items:
         return "未命中相关条款原文。"
     return json.dumps(
-        [{"clause_no": i["clause_no"], "quote": i["quote"][:240]} for i in items],
+        compress_items(items, query),
         ensure_ascii=False,
+        separators=(",", ":"),
     )
 
 

@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from app.agent.answers import REFUSAL, format_answer, normalize_citations
 from app.agent.language import _chat
 from app.agent.prompts import ANSWER_FORMAT
+from app.agent.utils.compress import compress_item
 
 
 _VALIDATE_INSTRUCTION = f"""你是排水管道规程回答的定稿编辑。
@@ -39,13 +40,14 @@ class ValidateResult(BaseModel):
     dropped: list[str] = Field(default_factory=list)
 
 
-def _pack_evidence(evidence: list) -> str:
+def _pack_evidence(evidence: list, query: str = "") -> str:
     lines = []
     for item in evidence or []:
         eid = item.get("evidence_id") or ""
-        clause = item.get("clause_no") or ""
-        quote = str(item.get("quote") or "").replace("\n", " ")[:120]
-        lines.append(f"- id={eid} clause={clause} quote={quote}")
+        for row in compress_item(item, query):
+            lines.append(
+                f"- id={eid} clause={row['clause_no']} quote={row['quote']}"
+            )
     return "\n".join(lines) or "（无证据）"
 
 
@@ -74,7 +76,7 @@ async def validate_answer(
                 (
                     "human",
                     f"用户问题：{query}\n\n草稿回答：\n{draft}\n\n证据列表：\n"
-                    f"{_pack_evidence(evidence)}",
+                    f"{_pack_evidence(evidence, query)}",
                 ),
             ]
         )

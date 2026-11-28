@@ -1,5 +1,7 @@
 """意图识别 + 问题改写 + create_agent 检索 + 回答校验。"""
 
+from langgraph.errors import GraphRecursionError
+
 from app.agent.answers import REFUSAL, classify_turn, grounded_summary
 from app.agent.language import recognize_intent, rewrite_query
 from app.agent.prompts import CHITCHAT_REPLY, INTENT_LABEL
@@ -20,6 +22,17 @@ from app.agent.utils.reply import (
     emit_partial_answer,
 )
 from app.agent.utils.validate import validate_answer
+
+
+def _is_timeout(exc: BaseException) -> bool:
+    seen: set[int] = set()
+    cur: BaseException | None = exc
+    while cur is not None and id(cur) not in seen:
+        seen.add(id(cur))
+        if "timeout" in type(cur).__name__.lower():
+            return True
+        cur = cur.__cause__ or cur.__context__
+    return False
 
 
 async def node_recognize(state: State):
@@ -89,29 +102,42 @@ async def node_react(state: State):
             intent=intent, label=label, search_query=search_query
         )
         text = ""
-        async for mode, chunk in agent.astream(
-            {
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": (
-                            f"用户问：{q}\n"
-                            f"检索查询：{search_query}\n"
-                            "请按标准结构作答：开场直答，再只分用户问到的方面；"
-                            "用完整句子讲清楚，不要抄原文、不要写条款号、不要加没问的内容。"
-                        ),
-                    }
-                ]
-            },
-            {"recursion_limit": react_recursion_limit()},
-            stream_mode=["updates", "values"],
-        ):
-            if mode == "updates" and isinstance(chunk, dict):
-                emit_agent_progress(chunk)
-            elif mode == "values" and isinstance(chunk, dict):
-                text = last_ai_text(chunk.get("messages"))
-                if text:
-                    emit_partial_answer(text, collected)
+        try:
+            async for mode, chunk in agent.astream(
+                {
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": (
+                                f"用户问：{q}\n"
+                                f"检索查询：{search_query}\n"
+                                "请按标准结构作答：开场直答，再只分用户问到的方面；"
+                                "检索最多 2 次，有条款就停手作答。"
+                            ),
+                        }
+                    ]
+                },
+                {"recursion_limit": react_recursion_limit()},
+                stream_mode=["updates", "values"],
+            ):
+                if mode == "updates" and isinstance(chunk, dict):
+                    emit_agent_progress(chunk)
+                elif mode == "values" and isinstance(chunk, dict):
+                    text = last_ai_text(chunk.get("messages"))
+                    if text:
+                        emit_partial_answer(text, collected)
+        except GraphRecursionError:
+            emit(
+                "plan_step",
+                dict(text="ReAct：达到步数上限，改用已检索条款整理"),
+            )
+        except Exception as exc:
+            if not _is_timeout(exc):
+                raise
+            emit(
+                "plan_step",
+                dict(text="ReAct：模型超时，改用已检索条款整理"),
+            )
         draft = text or grounded_summary(collected) or REFUSAL
         emit_draft_ready(draft, collected)
         return dict(

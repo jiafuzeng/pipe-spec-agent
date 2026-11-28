@@ -157,3 +157,67 @@ class TurnTests(unittest.TestCase):
         self.assertIn("回答校验", text)
         self.assertNotIn("get_calculation_schema", text)
         self.assertNotIn("clarification_required", text)
+
+    def test_react_recursion_falls_back_to_evidence(self):
+        from langgraph.errors import GraphRecursionError
+
+        class _Looping:
+            async def astream(self, inputs, config=None, stream_mode=None):
+                yield ("updates", {"tools": {}})
+                raise GraphRecursionError("Recursion limit of 10 reached")
+
+        evidence = [
+            {
+                "evidence_id": "p1",
+                "clause_no": "1.0.1",
+                "quote": "1.0.1 为加强城镇排水管道检测管理，制定本规程。",
+            }
+        ]
+        with (
+            patch(
+                "app.agent.utils.agent.create_agent",
+                return_value=_Looping(),
+            ),
+            patch(
+                "app.agent.tools.search_clauses",
+                return_value={"evidence": evidence},
+            ),
+        ):
+            text = self.api.post(
+                self.url,
+                json={"message": "编制目的是什么？"},
+            ).text
+        self.assertNotIn("TOOL_UNAVAILABLE", text)
+        self.assertIn("达到步数上限", text)
+        self.assertIn("event: answer", text)
+
+    def test_react_timeout_falls_back_to_evidence(self):
+        class _TimedOut:
+            async def astream(self, inputs, config=None, stream_mode=None):
+                yield ("updates", {"tools": {}})
+                raise TimeoutError("Request timed out.")
+
+        evidence = [
+            {
+                "evidence_id": "p1",
+                "clause_no": "1.0.1",
+                "quote": "1.0.1 为加强城镇排水管道检测管理，制定本规程。",
+            }
+        ]
+        with (
+            patch(
+                "app.agent.utils.agent.create_agent",
+                return_value=_TimedOut(),
+            ),
+            patch(
+                "app.agent.tools.search_clauses",
+                return_value={"evidence": evidence},
+            ),
+        ):
+            text = self.api.post(
+                self.url,
+                json={"message": "编制目的是什么？"},
+            ).text
+        self.assertNotIn("TOOL_UNAVAILABLE", text)
+        self.assertIn("模型超时", text)
+        self.assertIn("event: answer", text)

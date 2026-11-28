@@ -5,8 +5,10 @@ from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
 from app import settings
-from app.agent.prompts import AGENT_PROMPT, REACT_MAX_STEPS
+from app.agent.prompts import AGENT_PROMPT
 from app.agent.tools import search_clauses_tool
+
+RECURSION_LIMIT = 20
 
 
 def build_search_agent(*, intent: str, label: str, search_query: str):
@@ -28,4 +30,4 @@ def build_search_agent(*, intent: str, label: str, search_query: str):
 
 
 def react_recursion_limit() -> int:
-    return REACT_MAX_STEPS * 2 + 2
+    return RECURSION_LIMIT

@@ -11,6 +11,7 @@ from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.agent.graph import get_graph
+from app.agent.utils.agent import RECURSION_LIMIT
 
 router = APIRouter()
 log = logging.getLogger(__name__)
@@ -203,7 +204,10 @@ async def turn(sid: str, body: Message, request: Request):
         try:
             stream = graph.astream(
                 {"query": query},
-                {"configurable": {"thread_id": sid}},
+                {
+                    "configurable": {"thread_id": sid},
+                    "recursion_limit": RECURSION_LIMIT,
+                },
                 stream_mode="custom",
             )
             async for chunk in stream:

@@ -36,6 +36,7 @@ function Think({ lines, live }) {
   const [lineIndex, setLineIndex] = useState(0);
   const body = useRef(null);
   const cursor = useRef({ index: -1, text: "" });
+  const linesKey = lines.join("\n");
   const reduceMotion =
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -80,7 +81,7 @@ function Think({ lines, live }) {
       if (count >= chars.length) window.clearInterval(timer);
     }, 28);
     return () => window.clearInterval(timer);
-  }, [live, lines, reduceMotion]);
+  }, [live, lines, linesKey, reduceMotion]);
   useEffect(() => {
     if (!live || !body.current) return;
     body.current.scrollTop = body.current.scrollHeight;
@@ -302,6 +303,9 @@ function turnFinished(events) {
   return events.some(
     (event) => event.type === "error" || isFinalAnswer(event),
   );
+}
+function hasVisibleAnswer(events) {
+  return events.some((event) => event.type === "answer" || event.type === "error");
 }
 function Turn({ turn, live, cited, selected, onCite, onSelect }) {
   const evidence = turn.events
@@ -588,6 +592,10 @@ export function Chat() {
     let session = chat.session;
     const event = (e) => {
       if (runGen.current !== myGen) return;
+      if (isFinalAnswer(e) || e.type === "error") {
+        sending.current = false;
+        setBusy(false);
+      }
       setChat((prev) => ({
         ...prev,
         turns: prev.turns.map((t) => {
@@ -892,7 +900,7 @@ export function Chat() {
                 selected={Boolean(active && active.turn.id === t.id)}
                 onCite={(index) => setSource({ turnId: t.id, index })}
                 onSelect={(index) => setSource({ turnId: t.id, index })}
-                live={busy && !turnFinished(t.events)}
+                live={busy && !turnFinished(t.events) && !hasVisibleAnswer(t.events)}
               />
             ))}
           </div>
