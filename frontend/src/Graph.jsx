@@ -17,19 +17,23 @@ import "@xyflow/react/dist/style.css";
 const NODE_W = 168;
 const NODE_H = 56;
 
-/** Mirrors compile_graph() in app/agent/workflow.py */
+/** Mirrors compile_graph() in app/agent/graph.py */
 const GRAPH = {
   nodes: [
     { id: "START", title: "开始", kind: "terminal" },
     { id: "recognize", title: "意图识别", note: "闲聊可结束" },
-    { id: "react", title: "create_agent", note: "检索+总结", lane: "qa" },
+    { id: "rewrite", title: "问题改写", note: "检索查询", lane: "qa" },
+    { id: "react", title: "create_agent", note: "检索+草稿", lane: "qa" },
+    { id: "validate", title: "回答校验", note: "裁剪跑题", lane: "qa" },
     { id: "END", title: "结束", kind: "terminal" },
   ],
   edges: [
     ["START", "recognize"],
-    ["recognize", "react"],
+    ["recognize", "rewrite"],
     ["recognize", "END"],
-    ["react", "END"],
+    ["rewrite", "react"],
+    ["react", "validate"],
+    ["validate", "END"],
   ],
 };
 
@@ -62,7 +66,9 @@ function layoutGraph(direction = "TB") {
     source,
     target,
     type: "smoothstep",
-    animated: source === "recognize" && target === "react",
+    animated:
+      (source === "rewrite" && target === "react") ||
+      (source === "react" && target === "validate"),
     markerEnd: { type: MarkerType.ArrowClosed, width: 18, height: 18, color: "#176954" },
     style: { stroke: "#176954", strokeWidth: 1.6 },
   }));
@@ -155,7 +161,7 @@ export function Graph() {
     <figure className="graph topology">
       <figcaption>
         使用 <code>@xyflow/react</code> + <code>dagre</code> 自动排版，边关系对齐
-        <code>compile_graph()</code>。意图识别后进入 ReAct：LLM 决策/总结 ⇄ 工具调用；闲聊或 finish 直接结束。
+        <code>compile_graph()</code>。意图识别 → 改写 → ReAct 草稿 → 回答校验；闲聊直接结束。
       </figcaption>
       <ReactFlowProvider>
         <FlowCanvas />

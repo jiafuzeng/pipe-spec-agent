@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
-from app.agent.workflow import get_graph
+from app.agent.graph import get_graph
 
 router = APIRouter()
 log = logging.getLogger(__name__)

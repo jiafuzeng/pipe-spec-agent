@@ -969,6 +969,49 @@ pre,
   color: #1c1c1c;
   cursor: pointer;
 }
+.reply.markdown .reply-md > :first-child {
+  margin-top: 0;
+}
+.reply.markdown .reply-md > :last-child {
+  margin-bottom: 0;
+}
+.reply.markdown p {
+  margin: 0 0 0.75em;
+}
+.reply.markdown ul,
+.reply.markdown ol {
+  margin: 0 0 0.75em;
+  padding-left: 1.35em;
+}
+.reply.markdown li {
+  margin: 0.35em 0;
+}
+.reply.markdown li + li {
+  margin-top: 0.65em;
+}
+.reply.markdown strong {
+  font-weight: 650;
+  color: #111;
+}
+.reply.markdown code {
+  font-size: 0.92em;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  background: #f0f0f2;
+}
+.reply.markdown h1,
+.reply.markdown h2,
+.reply.markdown h3 {
+  margin: 1.1em 0 0.35em;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.reply.markdown h3 + p {
+  margin-top: 0;
+}
+.reply.markdown h1 { font-size: 1.15em; }
+.reply.markdown h2 { font-size: 1.08em; }
+.reply.markdown h3 { font-size: 1.05em; }
 .reply-block.streaming .reply {
   cursor: default;
 }

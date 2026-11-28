@@ -55,10 +55,10 @@ def _agent_report(refresh: bool) -> Path:
     with _agent_lock:
         if path.is_file() and not refresh:
             return path
-        from app.agent import workflow as wf
+        from app.agent import graph as ag
         from agentEval.run import run_suite
 
-        previous = wf._graph
+        previous = ag._graph
         try:
             report = run_suite("ci")
             path.write_text(
@@ -68,7 +68,7 @@ def _agent_report(refresh: bool) -> Path:
         except Exception as exc:
             raise HTTPException(503, f"Agent 评测失败：{exc}") from exc
         finally:
-            wf.set_graph(previous)
+            ag.set_graph(previous)
         if not path.is_file():
             raise HTTPException(503, "Agent 评测未写出报告")
     return path

@@ -1,196 +1,139 @@
-"""意图识别 + LangChain create_agent 检索。"""
+"""意图识别 + 问题改写 + create_agent 检索 + 回答校验。"""
 
-import asyncio
-import json
-import os
-import time
-import uuid
-from typing import Required, TypedDict
-
-from langchain.agents import create_agent
-from langchain_core.messages import AIMessage
-from langchain_core.tools import tool
-from langchain_openai import ChatOpenAI
-from langgraph.config import get_stream_writer
-from langgraph.graph import END, START, StateGraph
-from pydantic import SecretStr
-
-from app import settings
-from app.agent.answers import (
-    REFUSAL,
-    classify_turn,
-    grounded_summary,
-    normalize_citations,
+from app.agent.answers import REFUSAL, classify_turn, grounded_summary
+from app.agent.language import recognize_intent, rewrite_query
+from app.agent.prompts import CHITCHAT_REPLY, INTENT_LABEL
+from app.agent.state import State
+from app.agent.tools import (
+    bind_evidence,
+    bind_stream_writer,
+    emit,
+    reset_evidence,
+    reset_stream_writer,
 )
-from app.agent.language import recognize_intent
-from app.knowledge.retrieval import search_clauses
-
-_REACT_MAX_STEPS = 4
-_CHITCHAT_REPLY = (
-    "我是排水管道规程助手，可问 CJJ 181—2012 条款、适用条件或检测方案。"
+from app.agent.utils.agent import build_search_agent, react_recursion_limit
+from app.agent.utils.messages import last_ai_text
+from app.agent.utils.progress import emit_agent_progress
+from app.agent.utils.reply import (
+    emit_draft_ready,
+    emit_final_answer,
+    emit_partial_answer,
 )
-_AGENT_PROMPT = (
-    "你是排水管道规程助手，只依据 CJJ 181—2012 原文回答。"
-    "缺依据时调用 search_clauses；有足够条款后再总结。不编造条款号与原文。"
-)
+from app.agent.utils.validate import validate_answer
 
 
-class State(TypedDict, total=False):
-    """图状态：问题、意图与证据。"""
-
-    query: Required[str]
-    intent: str
-    evidence: list
-    route: str
-
-
-def emit(kind: str, data: dict | None = None, status: str = "running"):
-    """经 LangGraph custom stream 推送一条前端事件。"""
-    get_stream_writer()(dict(data or {}, type=kind, status=status))
-
-
-async def _search(query: str) -> tuple[list, str]:
-    """召回条款候选；返回 (items, status)。"""
-    try:
-        items = (await asyncio.to_thread(search_clauses, query))["evidence"]
-        return items, "succeeded"
-    except Exception:
-        return [], "failed"
-
-
-def _last_ai_text(messages) -> str:
-    """取最后一条无 tool_calls 的 AI 文本。"""
-    for message in reversed(messages or []):
-        if not isinstance(message, AIMessage) or message.tool_calls:
-            continue
-        text = message.content if isinstance(message.content, str) else str(message.content or "")
-        if text.strip():
-            return text
-    return ""
-
-
-def _answer(text: str, items: list):
-    """推送最终回答事件，并返回节点状态更新。"""
-    emit("plan_step", dict(text="ReAct：检索总结"))
-    emit(
-        "answer",
-        dict(
-            text=normalize_citations(text) or REFUSAL,
-            citations=[item["evidence_id"] for item in items],
-            partial=False,
-        ),
-        status="completed",
-    )
-    return dict(evidence=items, route="end")
-
-
-async def recognize(state: State):
-    """先规则判意图；仅规则落成 qa 时再用 LLM。"""
+async def node_recognize(state: State):
+    """先规则判意图；仅规则落成 qa 时再用 LLM。需检索则进入改写。"""
     q = state["query"]
     intent = classify_turn(q)
     if intent == "qa":
         proposal = await recognize_intent(q)
         if proposal:
             intent = proposal
-    emit("plan_step", dict(text=f"意图识别：{intent}", intent=intent))
+    label = INTENT_LABEL.get(intent, intent)
+    emit(
+        "plan_step",
+        dict(text=f"意图识别：{label}（{intent}）", intent=intent),
+    )
     if intent == "chitchat":
         emit(
             "answer",
-            dict(text=_CHITCHAT_REPLY, citations=[], partial=False),
+            dict(
+                text=CHITCHAT_REPLY,
+                format="markdown",
+                citations=[],
+                partial=False,
+            ),
             status="completed",
         )
         return dict(intent=intent, query=q, route="end")
-
-    emit("plan_step", dict(text="进入 ReAct 检索", questions=[q], intent=intent))
-    return dict(intent=intent, query=q, evidence=[], route="react")
+    return dict(intent=intent, query=q, evidence=[], route="rewrite")
 
 
-async def react(state: State):
-    """create_agent 检索循环；模型不可用则单次检索。"""
+async def node_rewrite(state: State):
+    """将原问题改写为检索查询，再进入 ReAct。"""
     q = state["query"]
     intent = state.get("intent") or "qa"
-    collected: list[dict] = []
+    search_query = await rewrite_query(q, intent) or q
+    emit(
+        "plan_step",
+        dict(
+            text="问题改写为检索查询",
+            intent=intent,
+            original=q,
+            search_query=search_query,
+            questions=[search_query],
+        ),
+    )
+    return dict(search_query=search_query, route="react")
 
-    @tool("search_clauses")
-    async def search_clauses_tool(query: str) -> str:
-        """检索 CJJ 181—2012 规程条款原文。传入简洁检索 query。"""
-        start = time.monotonic()
-        items, status = await _search(query)
+
+async def node_react(state: State):
+    """create_agent 检索并生成草稿，交给校验节点定稿。"""
+    q = state["query"]
+    search_query = state.get("search_query") or q
+    intent = state.get("intent") or "qa"
+    label = INTENT_LABEL.get(intent, intent)
+    collected: list[dict] = []
+    writer_token = bind_stream_writer()
+    token = bind_evidence(collected)
+    try:
         emit(
-            "tool_call",
+            "plan_step",
             dict(
-                tool="search_clauses",
-                inputs={"query": query},
-                status=status,
-                call_id=uuid.uuid4().hex,
-                elapsed_ms=round(1000 * (time.monotonic() - start)),
-                via="in_process",
-                summary=f"{len(items)} 条候选",
+                text=f"ReAct：启动检索智能体（意图 {label}，查询「{search_query}」）",
+                intent=intent,
             ),
         )
-        collected.extend(items)
-        for item in items:
-            emit("evidence", item)
-        if not items:
-            return "未命中相关条款原文。"
-        return json.dumps(
-            [{"clause_no": i["clause_no"], "quote": i["quote"][:240]} for i in items],
-            ensure_ascii=False,
+        agent = build_search_agent(
+            intent=intent, label=label, search_query=search_query
         )
-
-    if (
-        os.getenv("AGENT_MODEL_ENABLED", "1") == "0"
-        or not settings.CHAT_MODEL
-        or not settings.CHAT_BASE_URL
-    ):
-        items, _ = await _search(q)
-        for item in items:
-            emit("evidence", item)
-        return _answer(grounded_summary(items) or REFUSAL, items)
-
-    emit("plan_step", dict(text="ReAct：create_agent", intent=intent))
-    agent = create_agent(
-        model=ChatOpenAI(
-            model=settings.CHAT_MODEL,
-            api_key=SecretStr(settings.CHAT_API_KEY),
-            base_url=settings.CHAT_BASE_URL,
-            temperature=0,
-            timeout=settings.CHAT_TIMEOUT,
-        ),
-        tools=[search_clauses_tool],
-        system_prompt=f"{_AGENT_PROMPT}当前意图：{intent}。",
-    )
-    result = await agent.ainvoke(
-        {"messages": [{"role": "user", "content": q}]},
-        {"recursion_limit": _REACT_MAX_STEPS * 2 + 2},
-    )
-    text = _last_ai_text(result.get("messages")) or grounded_summary(collected) or REFUSAL
-    return _answer(text, collected)
-
-
-def _route(state: State) -> str:
-    return state.get("route") or "end"
-
-
-def compile_graph(checkpointer=None, store=None):
-    """编译 recognize → react（create_agent）图。"""
-    g = StateGraph(State)
-    g.add_node("recognize", recognize)
-    g.add_node("react", react)
-    g.add_edge(START, "recognize")
-    g.add_conditional_edges("recognize", _route, {"react": "react", "end": END})
-    g.add_edge("react", END)
-    return g.compile(checkpointer=checkpointer, store=store)
+        text = ""
+        async for mode, chunk in agent.astream(
+            {
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": (
+                            f"用户问：{q}\n"
+                            f"检索查询：{search_query}\n"
+                            "请按标准结构作答：开场直答，再只分用户问到的方面；"
+                            "用完整句子讲清楚，不要抄原文、不要写条款号、不要加没问的内容。"
+                        ),
+                    }
+                ]
+            },
+            {"recursion_limit": react_recursion_limit()},
+            stream_mode=["updates", "values"],
+        ):
+            if mode == "updates" and isinstance(chunk, dict):
+                emit_agent_progress(chunk)
+            elif mode == "values" and isinstance(chunk, dict):
+                text = last_ai_text(chunk.get("messages"))
+                if text:
+                    emit_partial_answer(text, collected)
+        draft = text or grounded_summary(collected) or REFUSAL
+        emit_draft_ready(draft, collected)
+        return dict(
+            draft_answer=draft,
+            evidence=collected,
+            route="validate",
+        )
+    finally:
+        reset_evidence(token)
+        reset_stream_writer(writer_token)
 
 
-workflow = compile_graph()
-_graph = None
-
-
-def get_graph():
-    return _graph or workflow
-
-
-def set_graph(compiled):
-    global _graph
-    _graph = compiled
+async def node_validate(state: State):
+    """校验草稿是否紧扣问题，裁掉跑题要点与无关证据后定稿。"""
+    q = state["query"]
+    draft = state.get("draft_answer") or REFUSAL
+    evidence = list(state.get("evidence") or [])
+    emit("plan_step", dict(text="回答校验：对照问题裁剪要点与引用"))
+    text, kept, dropped = await validate_answer(q, draft, evidence)
+    note = ""
+    if dropped:
+        note = "已去掉：" + "；".join(dropped[:3])
+    elif len(kept) < len(evidence):
+        note = f"引用 {len(evidence)}→{len(kept)} 条"
+    return emit_final_answer(text, kept, note=note)

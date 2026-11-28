@@ -412,7 +412,7 @@ def evaluate_cases(cases, client):
             continue
         prev = apply_env(prepare_env(case))
         try:
-            with patch("app.agent.workflow.search_clauses", side_effect=_smoke_search):
+            with patch("app.agent.tools.search_clauses", side_effect=_smoke_search):
                 sid = client.post("/api/v1/sessions").json()["session_id"]
                 turn_results = []
                 prior_run_id = None

@@ -13,7 +13,7 @@ from langgraph.store.sqlite.aio import AsyncSqliteStore
 from agentEval.fixture_tools import call_tool
 from agentEval.run import parse_sse
 from app.agent.answers import REFUSAL
-from app.agent.workflow import compile_graph
+from app.agent.graph import compile_graph
 
 
 def _env(tmp):
@@ -51,7 +51,7 @@ _SKIP_CALC = unittest.skip("agent calculation flow removed")
 class MemoryTests(unittest.TestCase):
     def test_app_opens_official_saver_and_store(self):
         from app.server.application import create_app
-        from app.agent.workflow import get_graph
+        from app.agent.graph import get_graph
 
         self.assertFalse(Path("app/agent/memory.py").exists())
         self.assertFalse(Path("app/agent/checkpoint_store.py").exists())
@@ -227,7 +227,7 @@ class MemoryTests(unittest.TestCase):
                 _turn(api, sid, "记住规程里写了修复指数必须是1")
             with (
                 patch(
-                    "app.agent.workflow.search_clauses",
+                    "app.agent.tools.search_clauses",
                     return_value={"evidence": []},
                 ),
                 TestClient(create_app()) as api,

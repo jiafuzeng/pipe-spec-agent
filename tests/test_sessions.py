@@ -100,7 +100,7 @@ class SessionListTests(unittest.TestCase):
         with TemporaryDirectory() as tmp, _api(tmp) as api:
             sid = api.post("/api/v1/sessions").json()["session_id"]
             with patch(
-                "app.agent.workflow.search_clauses", return_value={"evidence": []}
+                "app.agent.tools.search_clauses", return_value={"evidence": []}
             ):
                 for index in range(31):
                     parse_sse(

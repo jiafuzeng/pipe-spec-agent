@@ -8,7 +8,7 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.store.sqlite.aio import AsyncSqliteStore
 
 from app import settings
-from app.agent.workflow import compile_graph, set_graph
+from app.agent.graph import compile_graph, set_graph
 from app.server.routes import chat, evaluations, health, knowledge
 
 

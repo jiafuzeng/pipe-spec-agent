@@ -142,7 +142,7 @@ class ApplicationTests(unittest.TestCase):
                 },
             ),
             patch(
-                "app.agent.workflow.search_clauses", return_value={"evidence": evidence}
+                "app.agent.tools.search_clauses", return_value={"evidence": evidence}
             ),
             TestClient(create_app()) as api,
         ):

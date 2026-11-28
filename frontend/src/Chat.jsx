@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api, deleteSession, examples, listSessions, offline, renameSession, request, streamTurn } from "./api.js";
+import { renderMarkdown } from "./markdown.js";
 
 const names = [
   "目的与范围",
@@ -23,7 +24,9 @@ function thinkLine(event) {
   if (event.type !== "tool_call") return "";
   const name = toolNames[data.tool] || data.tool;
   const query = data.inputs?.query ? "「" + data.inputs.query + "」" : "";
-  const status = data.status === "succeeded" ? "完成" : data.status === "failed" ? "失败" : "进行中";
+  const outcome = data.outcome || data.status;
+  const status =
+    outcome === "succeeded" ? "完成" : outcome === "failed" ? "失败" : "进行中";
   return name + query + (data.summary ? " · " + data.summary : " · " + status);
 }
 
@@ -310,17 +313,36 @@ function Turn({ turn, live, cited, selected, onCite, onSelect }) {
   const thoughts = trace.map(thinkLine).filter(Boolean);
   const answers = turn.events.filter((e) => e.type === "answer");
   const latestAnswer = answers[answers.length - 1];
-  function answerText(text) {
+  function answerDisplay(text) {
     return String(text).replace(/\s*〔[^〕]+〕/g, "").replace(/[ \t]{2,}/g, " ").trim();
   }
-  function citedIndexes(text) {
+  function answerHtml(text) {
+    return renderMarkdown(answerDisplay(text));
+  }
+  function citedIndexes(text, data) {
     const seen = new Set();
     const indexes = [];
-    for (const match of String(text).matchAll(/〔([^〕]+)〕/g)) {
-      const index = evidence.findIndex((item) => item.clause_no === match[1]);
-      if (index < 0 || seen.has(index)) continue;
+    function push(index) {
+      if (index < 0 || seen.has(index)) return;
       seen.add(index);
       indexes.push(index);
+    }
+    for (const id of data?.citations || []) {
+      push(evidence.findIndex((item) => item.evidence_id === id));
+    }
+    for (const match of String(text).matchAll(/〔([^〕]+)〕/g)) {
+      push(evidence.findIndex((item) => item.clause_no === match[1]));
+    }
+    // 有 citations 字段时只展示校验后的引用，不再回退到全部 evidence
+    if (Array.isArray(data?.citations)) return indexes;
+    if (!indexes.length) {
+      const byClause = new Set();
+      evidence.forEach((item, index) => {
+        const key = item.clause_no || item.evidence_id || index;
+        if (byClause.has(key)) return;
+        byClause.add(key);
+        push(index);
+      });
     }
     return indexes;
   }
@@ -342,14 +364,22 @@ function Turn({ turn, live, cited, selected, onCite, onSelect }) {
       data.code ||
       JSON.stringify(data, null, 2);
     const partial = data.partial === true;
-    const cites = !partial ? citedIndexes(raw) : [];
+    const asMarkdown = data.format === "markdown" || /[*_`#\-]/.test(String(raw));
+    const cites = !partial ? citedIndexes(raw, data) : [];
     return (
       <div className={"reply-block" + (partial ? " streaming" : "")} key={key}>
         <div
-          className={"reply" + (selected ? " selected" : "")}
+          className={"reply" + (selected ? " selected" : "") + (asMarkdown ? " markdown" : "")}
           onClick={() => !partial && evidence.length && onSelect(0)}
         >
-          {answerText(raw)}
+          {asMarkdown ? (
+            <div
+              className="reply-md"
+              dangerouslySetInnerHTML={{ __html: answerHtml(raw) }}
+            />
+          ) : (
+            answerDisplay(raw)
+          )}
           {partial && <i className="caret" />}
         </div>
         {cites.length > 0 && (
@@ -376,7 +406,7 @@ function Turn({ turn, live, cited, selected, onCite, onSelect }) {
             JSON.stringify(data, null, 2);
           return (
             <div className="reply-block" key={i}>
-              <div className="warning">{answerText(raw)}</div>
+              <div className="warning">{answerDisplay(raw)}</div>
             </div>
           );
         })}
