@@ -2,7 +2,7 @@
 
 from langgraph.errors import GraphRecursionError
 
-from app.agent.answers import REFUSAL, classify_turn, grounded_summary
+from app.agent.answers import REFUSAL, classify_turn, grounded_summary, skip_intent_llm
 from app.agent.language import recognize_intent, rewrite_query
 from app.agent.prompts import CHITCHAT_REPLY, INTENT_LABEL
 from app.agent.state import State
@@ -25,33 +25,15 @@ from app.agent.utils.reply import (
 from log import trace
 
 
-def _is_timeout(exc: BaseException) -> bool:
-    seen: set[int] = set()
-    stack: list[BaseException] = [exc]
-    while stack:
-        cur = stack.pop()
-        if id(cur) in seen:
-            continue
-        seen.add(id(cur))
-        if "timeout" in type(cur).__name__.lower():
-            return True
-        if cur.__cause__ is not None:
-            stack.append(cur.__cause__)
-        if cur.__context__ is not None:
-            stack.append(cur.__context__)
-        if isinstance(cur, BaseExceptionGroup):
-            stack.extend(cur.exceptions)
-    return False
-
-
 async def node_recognize(state: State):
-    """先规则判意图；仅规则落成 retrieve 时再用 LLM。需检索则进入改写。"""
+    """寒暄与术语/适用条件检索用规则直出；其余再交给 LLM 复核。"""
     q = state["query"]
-    intent = classify_turn(q)
-    if intent == "retrieve":
-        proposal = await recognize_intent(q)
-        if proposal:
-            intent = proposal
+    hint = classify_turn(q)
+    if skip_intent_llm(q, hint):
+        intent = hint
+    else:
+        proposal = await recognize_intent(q, hint=hint)
+        intent = proposal or hint
     label = INTENT_LABEL.get(intent, intent)
     trace("recognize", intent=intent, query=q)
     emit(
@@ -149,14 +131,11 @@ async def node_react(state: State):
                 dict(text="ReAct：达到步数上限，改用已检索条款整理"),
             )
         except Exception as exc:
-            if not _is_timeout(exc):
-                trace("react.error", error=type(exc).__name__)
-                raise
             recovered = True
-            trace("react.timeout", error=type(exc).__name__, evidence=len(collected))
+            trace("react.error", error=type(exc).__name__, evidence=len(collected))
             emit(
                 "plan_step",
-                dict(text="ReAct：模型超时，改用已检索条款整理"),
+                dict(text="ReAct：执行中断，改用已检索条款整理"),
             )
         if recovered and not collected:
             items, _ = await search_evidence(search_query)

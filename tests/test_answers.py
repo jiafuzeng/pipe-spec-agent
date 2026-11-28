@@ -2,10 +2,12 @@ import unittest
 
 from app.agent.answers import (
     REFUSAL,
+    TASK_CASES,
     classify_turn,
     format_answer,
     grounded_summary,
     normalize_citations,
+    skip_intent_llm,
 )
 
 PURPOSE = [
@@ -27,14 +29,69 @@ class ClassifyTests(unittest.TestCase):
         self.assertEqual(classify_turn("你好"), "chitchat")
         self.assertEqual(classify_turn("第1.0.1条写了什么？"), "retrieve")
         self.assertEqual(classify_turn("检查井为何要在声纳之前"), "retrieve")
+        self.assertEqual(
+            classify_turn("CJJ 181—2012 的编制目的与适用范围是什么？"),
+            "retrieve",
+        )
+        self.assertEqual(
+            classify_turn(
+                "管道结构性缺陷与功能性缺陷的普查周期分别是多久？哪些情形下应缩短检测周期？"
+            ),
+            "retrieve",
+        )
+        self.assertEqual(classify_turn("结构性缺陷和功能性缺陷有何区别"), "retrieve")
+        self.assertEqual(classify_turn("检测方案应包括哪些内容？"), "retrieve")
+        self.assertEqual(classify_turn("修复指数公式是什么？RI 怎么分级？"), "retrieve")
+        self.assertEqual(classify_turn("直向摄影和侧向摄影有何区别"), "retrieve")
+        self.assertEqual(
+            classify_turn("声纳检测为何不能单独作为结构性缺陷判定依据？"),
+            "compare",
+        )
+        self.assertEqual(classify_turn("CCTV 与 QV 的适用条件有何差异？"), "retrieve")
+        self.assertEqual(
+            classify_turn("传统方法与电视检测分别适用于什么检查？"),
+            "retrieve",
+        )
+        self.assertEqual(
+            classify_turn(
+                "CCTV、QV、声纳三种检测方式的官方术语定义分别是什么？各自的适用条件有何差异？"
+            ),
+            "retrieve",
+        )
+        self.assertTrue(
+            skip_intent_llm(
+                "CCTV、QV、声纳三种检测方式的官方术语定义分别是什么？各自的适用条件有何差异？",
+                "retrieve",
+            )
+        )
 
     def test_compare_by_methods(self):
-        self.assertEqual(classify_turn("CCTV 与 QV 的适用条件有何差异？"), "compare")
         self.assertEqual(classify_turn("两种检测方案怎么对比"), "compare")
+        self.assertEqual(classify_turn("请给出检测方案。"), "compare")
+        self.assertEqual(
+            classify_turn("列表对比五种检测方式并给出选择结论"),
+            "compare",
+        )
+        self.assertEqual(
+            classify_turn(
+                "某 DN800 混凝土污水管，管内水位约 60%，请规划检测方案并推荐检测方式"
+            ),
+            "compare",
+        )
 
     def test_compute_by_calc_or_chart(self):
         self.assertEqual(classify_turn("计算 RI"), "compute")
+        self.assertEqual(classify_turn("已知 F=6、K=0、E=3、T=0，计算 RI"), "compute")
         self.assertEqual(classify_turn("把缺陷统计画成图"), "compute")
+        self.assertEqual(classify_turn("评估标准是什么"), "retrieve")
+        self.assertEqual(classify_turn("养护指数怎么分级"), "retrieve")
+
+    def test_task_book_nine_questions(self):
+        for query, expected in TASK_CASES:
+            with self.subTest(query=query[:24], expected=expected):
+                hint = classify_turn(query)
+                self.assertEqual(hint, expected)
+                self.assertTrue(skip_intent_llm(query, hint))
 
 
 class SummaryTests(unittest.TestCase):
