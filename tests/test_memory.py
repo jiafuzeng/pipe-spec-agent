@@ -59,12 +59,14 @@ class MemoryTests(unittest.TestCase):
         with (
             TemporaryDirectory() as tmp,
             patch.dict(os.environ, _env(tmp)),
-            TestClient(create_app(tool_client=call_tool)) as api,
+            patch("app.settings.LANGGRAPH_DB", Path(tmp) / "langgraph.sqlite"),
+            TestClient(create_app()) as api,
         ):
             api.post("/api/v1/sessions")
             graph = get_graph()
             self.assertIsInstance(graph.checkpointer, AsyncSqliteSaver)
             self.assertIsInstance(graph.store, AsyncSqliteStore)
+            self.assertIs(api.app.state.store, graph.store)
 
     def test_inmemory_saver_isolates_threads(self):
         async def run():
@@ -91,7 +93,7 @@ class MemoryTests(unittest.TestCase):
         with (
             TemporaryDirectory() as tmp,
             patch.dict(os.environ, _env(tmp)),
-            TestClient(create_app(tool_client=call_tool)) as api,
+            TestClient(create_app()) as api,
         ):
             sid = api.post("/api/v1/sessions").json()["session_id"]
             first = _turn(api, sid, "计算 RI，F=6 K=0 E=6 T=0，间距为2米")
@@ -123,7 +125,7 @@ class MemoryTests(unittest.TestCase):
         from app.server.application import create_app
 
         with TemporaryDirectory() as tmp, patch.dict(os.environ, _env(tmp)):
-            with TestClient(create_app(tool_client=call_tool)) as api:
+            with TestClient(create_app()) as api:
                 first_id = api.post("/api/v1/sessions").json()["session_id"]
                 waiting = _turn(api, first_id, "计算 RI，F=6 K=0", subject="A")
                 self.assertEqual(waiting[-1]["type"], "clarification_required")
@@ -138,7 +140,7 @@ class MemoryTests(unittest.TestCase):
                 }
                 self.assertEqual(names, {"F", "K"})
                 self.assertTrue(remembered["short_term"]["pending"])
-            with TestClient(create_app(tool_client=call_tool)) as api:
+            with TestClient(create_app()) as api:
                 restored = api.get(f"/api/v1/sessions/{first_id}").json()
                 names = {item["name"] for item in restored["short_term"]["confirmed"]}
                 self.assertEqual(names, {"F", "K"})
@@ -153,7 +155,7 @@ class MemoryTests(unittest.TestCase):
         with (
             TemporaryDirectory() as tmp,
             patch.dict(os.environ, _env(tmp)),
-            TestClient(create_app(tool_client=call_tool)) as api,
+            TestClient(create_app()) as api,
         ):
             sid = api.post("/api/v1/sessions").json()["session_id"]
             _turn(api, sid, "计算 RI，F=6 K=0 E=6 T=0", subject="pipe-1")
@@ -185,7 +187,7 @@ class MemoryTests(unittest.TestCase):
         with (
             TemporaryDirectory() as tmp,
             patch.dict(os.environ, _env(tmp)),
-            TestClient(create_app(tool_client=call_tool)) as api,
+            TestClient(create_app()) as api,
         ):
             sid = api.post("/api/v1/sessions").json()["session_id"]
             _turn(api, sid, "计算 RI，F=6 K=0 E=6 T=0", subject="pipe-1")
@@ -218,7 +220,7 @@ class MemoryTests(unittest.TestCase):
         from app.server.application import create_app
 
         with TemporaryDirectory() as tmp, patch.dict(os.environ, _env(tmp)):
-            with TestClient(create_app(tool_client=call_tool)) as api:
+            with TestClient(create_app()) as api:
                 sid = api.post("/api/v1/sessions").json()["session_id"]
                 done = _turn(api, sid, "计算 RI，F=6 K=0 E=6 T=0")
                 self.assertEqual(float(done[-1]["value"]), 4.5)
@@ -228,7 +230,7 @@ class MemoryTests(unittest.TestCase):
                     "app.agent.workflow.search_clauses",
                     return_value={"evidence": []},
                 ),
-                TestClient(create_app(tool_client=call_tool)) as api,
+                TestClient(create_app()) as api,
             ):
                 refused = _turn(api, sid, "井盖材质有没有规定")
                 self.assertIn(REFUSAL, refused[-1]["text"])

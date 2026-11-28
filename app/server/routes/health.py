@@ -1,7 +1,7 @@
 import os
 from fastapi import APIRouter
 from app.server.routes import knowledge
-from app.settings import chat, mcp_headers, mcp_url
+from app import settings
 
 router = APIRouter()
 
@@ -17,7 +17,7 @@ def healthcheck():
             else "unconfigured"
         },
         "chat_model": {
-            "status": "configured" if chat().base_url else "unconfigured"
+            "status": "configured" if settings.CHAT_BASE_URL else "unconfigured"
         },
         "reranker": {
             "status": "configured"
@@ -35,8 +35,8 @@ def healthcheck():
 
     try:
         response = httpx.get(
-            mcp_url().removesuffix("/mcp") + "/health",
-            headers=mcp_headers(),
+            settings.MCP_URL.removesuffix("/mcp") + "/health",
+            headers=settings.MCP_HEADERS,
             timeout=1.5,
         )
         if response.is_success and response.json().get("status") == "ok":

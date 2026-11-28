@@ -78,7 +78,6 @@ class DefectInputTests(unittest.TestCase):
         from unittest.mock import patch
         from fastapi.testclient import TestClient
         from app.server.application import create_app
-        from app.server.routes.sessions import Store
         from agentEval.run import parse_sse
 
         calls = []
@@ -102,7 +101,8 @@ class DefectInputTests(unittest.TestCase):
         with (
             TemporaryDirectory() as tmp,
             patch.dict(os.environ, {"AGENT_MODEL_ENABLED": "0"}),
-            TestClient(create_app(Store(Path(tmp) / "agent.sqlite"), tool)) as api,
+            patch("app.settings.LANGGRAPH_DB", Path(tmp) / "lg.sqlite"),
+            TestClient(create_app()) as api,
         ):
             sid = api.post("/api/v1/sessions").json()["session_id"]
             q = "DN1200，主干道（K=6），土质为流砂；管段存在 2 处重度错口（单处分值 5），缺陷纵向间距 1.2 m。计算 RI。"

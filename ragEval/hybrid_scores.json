@@ -1,10 +1,12 @@
 {
-  "mode": "offline_hybrid",
+  "mode": "production",
   "dataset": "rag_validation.json",
   "reranker_model": "qwen3-rerank",
   "scoring": "evidence_score 为 Top 5 正文证据覆盖率（百分制）；score 另要求条款/表号及 PDF 页序同时正确。库外题两项均为 null。",
-  "active_jobs": [],
-  "evaluated_job": "602ba1189e204ede80db284a22e1ee72",
+  "active_jobs": [
+    "602ba1189e204ede80db284a22e1ee72"
+  ],
+  "evaluated_job": null,
   "summary": {
     "answerable": 28,
     "hit_at_5": 1,
@@ -2795,7 +2797,7 @@
             "bm25",
             "vector"
           ],
-          "reranker_score": 0.6703053298226327
+          "reranker_score": 0.670305318301519
         }
       ]
     },
@@ -3211,7 +3213,7 @@
             "bm25",
             "vector"
           ],
-          "reranker_score": 0.6017926946753416
+          "reranker_score": 0.6017926806140572
         },
         {
           "id": "f53b7ec0a64329ecf109702e1e3934e97286b437316d277143493de4fb8c8edc",
@@ -3688,7 +3690,7 @@
             "bm25",
             "vector"
           ],
-          "reranker_score": 0.6277972844068558
+          "reranker_score": 0.6277973017172602
         }
       ]
     },

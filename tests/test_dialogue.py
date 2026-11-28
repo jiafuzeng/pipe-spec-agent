@@ -3,29 +3,29 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from rag.dialogue import REFUSAL, router
+from rag.dialogue import REFUSAL
 
 
 class TurnTests(unittest.TestCase):
     def setUp(self):
-        # Isolate from the workbench AGENT_DB so tests do not pollute 历史会话.
+        from app.server.application import create_app
+
         self._tmp = TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
         env = patch.dict(
             "os.environ",
             {
                 "AGENT_MODEL_ENABLED": "0",
-                "AGENT_DB": str(Path(self._tmp.name) / "journal.sqlite"),
+                "LANGGRAPH_DB": str(Path(self._tmp.name) / "langgraph.sqlite"),
             },
         )
         env.start()
         self.addCleanup(env.stop)
-        app = FastAPI()
-        app.include_router(router)
-        self.api = TestClient(app)
+        self._client_cm = TestClient(create_app())
+        self.api = self._client_cm.__enter__()
+        self.addCleanup(self._client_cm.__exit__, None, None, None)
         sid = self.api.post("/api/v1/sessions").json()["session_id"]
         self.url = f"/api/v1/sessions/{sid}/turns"
 

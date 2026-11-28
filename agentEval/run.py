@@ -377,7 +377,7 @@ def run_suite(suite: str = "ci") -> dict:
     from fastapi.testclient import TestClient
 
     from app.server.application import create_app
-    from app.server.routes.sessions import Store
+
     payload = json.loads(CASES.read_text(encoding="utf-8"))
     cases = payload["cases"]
     if suite == "ci":
@@ -385,9 +385,10 @@ def run_suite(suite: str = "ci") -> dict:
     elif suite != "all":
         cases = [c for c in cases if c["id"] == suite]
 
-    with TemporaryDirectory() as tmp, patch.dict(os.environ, {"MCP_DATA_DIR": tmp}):
-        app = create_app(store=Store(Path(tmp) / "agent.sqlite"))
-        with TestClient(app) as client:
+    with TemporaryDirectory() as tmp, patch.dict(
+        os.environ, {"MCP_DATA_DIR": tmp, "LANGGRAPH_DB": str(Path(tmp) / "lg.sqlite")}
+    ), patch("app.settings.LANGGRAPH_DB", Path(tmp) / "lg.sqlite"):
+        with TestClient(create_app()) as client:
             return evaluate_cases(cases, client)
 
 

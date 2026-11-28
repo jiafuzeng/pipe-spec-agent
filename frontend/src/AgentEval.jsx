@@ -55,20 +55,35 @@ function Turn({ turn }) {
 export function AgentEval() {
   const [report, setReport] = useState(null);
   const [error, setError] = useState("");
+  const [revision, setRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    request("/api/v1/evaluations/agent", { signal: controller.signal })
+    setReport(null);
+    setError("");
+    const refresh = revision ? "?refresh=1" : "";
+    request("/api/v1/evaluations/agent" + refresh, { signal: controller.signal })
       .then((data) => { if (!controller.signal.aborted) setReport(data); })
       .catch((e) => { if (!controller.signal.aborted) setError(e.message); });
     return () => controller.abort();
-  }, []);
+  }, [revision]);
   const summary = report?.summary;
   return (
     <div className="eval-page">
       <div className="crumb">评测 / Agent 评测</div>
-      <div className="pagehead"><h1>Agent 评测</h1></div>
-      {error && <p className="warning" role="alert">{error}</p>}
-      {!report && !error && <p role="status">正在读取评测报告…</p>}
+      <div className="pagehead"><h1>Agent 评测</h1>
+        <button disabled={!report && !error && revision > 0} onClick={() => setRevision((n) => n + 1)}>
+          重新评测
+        </button>
+      </div>
+      {error && (
+        <p className="warning" role="alert">
+          {error}
+          <button type="button" onClick={() => setRevision((n) => n + 1)}>重试</button>
+        </p>
+      )}
+      {!report && !error && (
+        <p role="status">{revision ? "正在重新评测…" : "正在读取评测报告…"}</p>
+      )}
       {report && <>
         <p>{report.agent_entry} · 检索 {report.retrieval_mode} · 工具 {report.mode}</p>
         <div className="eval-metrics">

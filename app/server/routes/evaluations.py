@@ -1,10 +1,13 @@
+import json
 import threading
 from pathlib import Path
+
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 
 router = APIRouter()
 _report_lock = threading.Lock()
+_agent_lock = threading.Lock()
 
 
 def _scores(mode: str) -> Path:
@@ -41,13 +44,40 @@ def rag_eval(mode: str = "hybrid", refresh: bool = False):
     )
 
 
+def _agent_report_path() -> Path:
+    return Path(__file__).resolve().parents[3] / "agentEval" / "last_report.json"
+
+
+def _agent_report(refresh: bool) -> Path:
+    path = _agent_report_path()
+    if path.is_file() and not refresh:
+        return path
+    with _agent_lock:
+        if path.is_file() and not refresh:
+            return path
+        from app.agent import workflow as wf
+        from agentEval.run import run_suite
+
+        previous = wf._graph
+        try:
+            report = run_suite("ci")
+            path.write_text(
+                json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+        except Exception as exc:
+            raise HTTPException(503, f"Agent 评测失败：{exc}") from exc
+        finally:
+            wf.set_graph(previous)
+        if not path.is_file():
+            raise HTTPException(503, "Agent 评测未写出报告")
+    return path
+
+
 @router.get("/api/v1/evaluations/agent")
-def agent_eval_report():
-    path = Path(__file__).resolve().parents[3] / "agentEval" / "last_report.json"
-    if not path.is_file():
-        raise HTTPException(
-            404, "暂无 agentEval 报告，请先运行 python -m agentEval.run"
-        )
+def agent_eval_report(refresh: bool = False):
     return FileResponse(
-        path, media_type="application/json", headers={"Cache-Control": "no-store"}
+        _agent_report(refresh),
+        media_type="application/json",
+        headers={"Cache-Control": "no-store"},
     )

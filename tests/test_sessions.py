@@ -1,19 +1,17 @@
 import os
 import unittest
-import uuid
+from contextlib import contextmanager
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from agentEval.fixture_tools import call_tool
 from agentEval.run import parse_sse
 
 
 def _env(tmp):
     return {
-        "AGENT_DB": str(Path(tmp) / "app.sqlite"),
         "LANGGRAPH_DB": str(Path(tmp) / "langgraph.sqlite"),
         "MCP_INLINE": "1",
         "RULE_FIXTURE": "1",
@@ -23,15 +21,21 @@ def _env(tmp):
     }
 
 
+@contextmanager
+def _api(tmp):
+    from app.server.application import create_app
+
+    with (
+        patch.dict(os.environ, _env(tmp)),
+        patch("app.settings.LANGGRAPH_DB", Path(tmp) / "langgraph.sqlite"),
+        TestClient(create_app()) as api,
+    ):
+        yield api
+
+
 class SessionListTests(unittest.TestCase):
     def test_list_returns_each_session_without_the_other_messages(self):
-        from app.server.application import create_app
-
-        with (
-            TemporaryDirectory() as tmp,
-            patch.dict(os.environ, _env(tmp)),
-            TestClient(create_app(tool_client=call_tool)) as api,
-        ):
+        with TemporaryDirectory() as tmp, _api(tmp) as api:
             first = api.post("/api/v1/sessions").json()["session_id"]
             second = api.post("/api/v1/sessions").json()["session_id"]
             parse_sse(
@@ -58,13 +62,7 @@ class SessionListTests(unittest.TestCase):
             self.assertNotIn("第二条会话的问题", texts)
 
     def test_list_orders_by_latest_question_and_omits_empty_sessions(self):
-        from app.server.application import create_app
-
-        with (
-            TemporaryDirectory() as tmp,
-            patch.dict(os.environ, _env(tmp)),
-            TestClient(create_app(tool_client=call_tool)) as api,
-        ):
+        with TemporaryDirectory() as tmp, _api(tmp) as api:
             older = api.post("/api/v1/sessions").json()["session_id"]
             newer = api.post("/api/v1/sessions").json()["session_id"]
             empty = api.post("/api/v1/sessions").json()["session_id"]
@@ -99,28 +97,18 @@ class SessionListTests(unittest.TestCase):
             self.assertNotIn("messages", listed[0])
 
     def test_opened_session_returns_every_question_in_order(self):
-        from app.server.routes.sessions import Store
-        from app.server.application import create_app
-
-        with (
-            TemporaryDirectory() as tmp,
-            patch.dict(os.environ, _env(tmp)),
-            TestClient(create_app(tool_client=call_tool)) as api,
-        ):
-            store = Store(_env(tmp)["AGENT_DB"])
-            sid = store.create()["session_id"]
-            version = 0
-            for index in range(31):
-                store.start(
-                    sid,
-                    "default",
-                    uuid.uuid4().hex,
-                    uuid.uuid4().hex,
-                    f"问题{index:02d}",
-                    {},
-                    version,
-                )
-                version += 1
+        with TemporaryDirectory() as tmp, _api(tmp) as api:
+            sid = api.post("/api/v1/sessions").json()["session_id"]
+            with patch(
+                "app.agent.workflow.search_clauses", return_value={"evidence": []}
+            ):
+                for index in range(31):
+                    parse_sse(
+                        api.post(
+                            f"/api/v1/sessions/{sid}/turns",
+                            json={"message": f"问题{index:02d}"},
+                        ).text
+                    )
             opened = api.get(f"/api/v1/sessions/{sid}").json()
             texts = [item["text"] for item in opened["messages"]]
             self.assertEqual(len(texts), 31)
@@ -128,13 +116,7 @@ class SessionListTests(unittest.TestCase):
             self.assertEqual(texts[-1], "问题30")
 
     def test_rename_and_delete_keep_other_sessions(self):
-        from app.server.application import create_app
-
-        with (
-            TemporaryDirectory() as tmp,
-            patch.dict(os.environ, _env(tmp)),
-            TestClient(create_app(tool_client=call_tool)) as api,
-        ):
+        with TemporaryDirectory() as tmp, _api(tmp) as api:
             kept = api.post("/api/v1/sessions").json()["session_id"]
             gone = api.post("/api/v1/sessions").json()["session_id"]
             parse_sse(
@@ -154,15 +136,25 @@ class SessionListTests(unittest.TestCase):
             )
             self.assertEqual(renamed.status_code, 200)
             self.assertEqual(renamed.json()["title"], "现场复查")
-            listed = {item["session_id"]: item for item in api.get("/api/v1/sessions").json()}
+            listed = {
+                item["session_id"]: item for item in api.get("/api/v1/sessions").json()
+            }
             self.assertEqual(listed[kept]["title"], "现场复查")
             self.assertEqual(listed[kept]["last_message"], "保留的问题")
-            self.assertEqual(api.patch("/api/v1/sessions/missing", json={"title": "不存在"}).status_code, 404)
+            self.assertEqual(
+                api.patch(
+                    "/api/v1/sessions/missing", json={"title": "不存在"}
+                ).status_code,
+                404,
+            )
             removed = api.delete(f"/api/v1/sessions/{gone}")
             self.assertEqual(removed.status_code, 204)
             self.assertEqual(api.get(f"/api/v1/sessions/{gone}").status_code, 404)
             self.assertEqual(api.delete(f"/api/v1/sessions/{gone}").status_code, 404)
             after = api.get("/api/v1/sessions").json()
             self.assertEqual([item["session_id"] for item in after], [kept])
-            texts = [item["text"] for item in api.get(f"/api/v1/sessions/{kept}").json()["messages"]]
+            texts = [
+                item["text"]
+                for item in api.get(f"/api/v1/sessions/{kept}").json()["messages"]
+            ]
             self.assertEqual(texts, ["保留的问题"])

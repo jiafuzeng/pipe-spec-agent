@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import os
 import time
 import uuid
 from typing import Required, TypedDict
@@ -9,18 +10,20 @@ from typing import Required, TypedDict
 from langchain.agents import create_agent
 from langchain_core.messages import AIMessage
 from langchain_core.tools import tool
+from langchain_openai import ChatOpenAI
 from langgraph.config import get_stream_writer
 from langgraph.graph import END, START, StateGraph
+from pydantic import SecretStr
 
+from app import settings
 from app.agent.answers import (
     REFUSAL,
     classify_turn,
     grounded_summary,
     normalize_citations,
 )
-from app.agent.language import IntentResult, chat_model, structured
+from app.agent.language import recognize_intent
 from app.knowledge.retrieval import search_clauses
-from app.settings import chat
 
 _REACT_MAX_STEPS = 4
 _CHITCHAT_REPLY = (
@@ -86,14 +89,9 @@ async def recognize(state: State):
     q = state["query"]
     intent = classify_turn(q)
     if intent == "qa":
-        proposal = await structured(
-            IntentResult,
-            "只判定意图：qa/compare/explain/plan/chitchat。"
-            "寒暄、身份介绍标为 chitchat。",
-            {"问题": q},
-        )
-        if proposal and proposal.intent:
-            intent = proposal.intent
+        proposal = await recognize_intent(q)
+        if proposal:
+            intent = proposal
     emit("plan_step", dict(text=f"意图识别：{intent}", intent=intent))
     if intent == "chitchat":
         emit(
@@ -140,7 +138,11 @@ async def react(state: State):
             ensure_ascii=False,
         )
 
-    if not chat().ready:
+    if (
+        os.getenv("AGENT_MODEL_ENABLED", "1") == "0"
+        or not settings.CHAT_MODEL
+        or not settings.CHAT_BASE_URL
+    ):
         items, _ = await _search(q)
         for item in items:
             emit("evidence", item)
@@ -148,7 +150,13 @@ async def react(state: State):
 
     emit("plan_step", dict(text="ReAct：create_agent", intent=intent))
     agent = create_agent(
-        model=chat_model(),
+        model=ChatOpenAI(
+            model=settings.CHAT_MODEL,
+            api_key=SecretStr(settings.CHAT_API_KEY),
+            base_url=settings.CHAT_BASE_URL,
+            temperature=0,
+            timeout=settings.CHAT_TIMEOUT,
+        ),
         tools=[search_clauses_tool],
         system_prompt=f"{_AGENT_PROMPT}当前意图：{intent}。",
     )
